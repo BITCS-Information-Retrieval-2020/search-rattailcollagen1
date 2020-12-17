@@ -1,0 +1,22 @@
+// type 0 表示全文检索
+{
+    "type": 0,
+	"query_text": "GNN"
+}
+// type 1 表示高级检索，不需要的字段设为空字符串，operator表示从
+//第二个字段开始每个字段的运算符，空字段对应的操作符也为空字符串
+{
+    "type": 1,
+	"qury_text":{
+	    "title": "GNN",
+		"author": "Hinton",
+		"abstract": "",
+		"content": "this paper proposed ..."
+	},
+	"operator": ["AND", "", "AND"]
+}
+# type 3 表示视频定位
+{
+    "type": 2,
+	"query_text": "GNN"
+}
