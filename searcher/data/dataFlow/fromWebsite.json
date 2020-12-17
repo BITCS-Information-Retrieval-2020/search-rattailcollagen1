@@ -1,22 +1,25 @@
-// type 0 表示全文检索
+// type 0 表示全部字段检索，在基本搜索框和高级检索的“全部”选项中使用
 {
     "type": 0,
+    "top_number": 10,
 	"query_text": "GNN"
 }
 // type 1 表示高级检索，不需要的字段设为空字符串，operator表示从
 //第二个字段开始每个字段的运算符，空字段对应的操作符也为空字符串
 {
     "type": 1,
+    "top_number": 10,
 	"qury_text":{
 	    "title": "GNN",
 		"author": "Hinton",
 		"abstract": "",
 		"content": "this paper proposed ..."
 	},
-	"operator": ["AND", "", "AND"]
+	"operator": ["OR", "AND", "", "NOT"]
 }
 # type 3 表示视频定位
 {
     "type": 2,
+    "top_number": 10,
 	"query_text": "GNN"
 }
