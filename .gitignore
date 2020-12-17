@@ -2,6 +2,8 @@
 # test开头的文件仅用于测试
 !/searcher/data/videos/*.md
 !/searcher/data/PDFs/*.md
+!/searcher/data/videos/.gitkeep
+!/searcher/data/PDFs/.gitkeep
 /searcher/data/videos/*
 /searcher/data/PDFs/*
 /test*.*
