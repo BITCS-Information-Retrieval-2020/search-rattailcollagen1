@@ -1,3 +1,4 @@
+//"title", "authors", "abstract", "pdfText", "videoStruct"里面的"sentence", 这些需要建立索引
 [
     {
         "_id": 1,
