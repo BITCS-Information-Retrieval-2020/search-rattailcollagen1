@@ -8,12 +8,12 @@
         "publicationOrg": "NeurIPS",
         "year": 2020,
         "pdfUrl": "...",
-        "pdfPath": "./searcher/data/PDFs/xx.pdf",
+        "pdfPath": "/data/PDFs/xx.pdf",
         "publicationUrl": "https://papers.nips.cc/paper/2020/hash/3ad7c2ebb96fcba7cda0cf54a2e802f5-Abstract.html",
         "codeUrl": "https://github.com/zjysteven/DVERGE",
         "datasetUrl": "https://drive.google.com/drive/folders/1i96Bk_bCWXhb7afSNp1t3woNjO1kAMDH?usp=sharing",
         "videoUrl": "",
-        "videoPath": "./searcher/data/videos/xx.*",
+        "videoPath": "/data/videos/xx.*",
         "pdfText": "Alternatively, ensemble methods are proposed to induce sub-models...",
         "videoStruct": [
             {
