@@ -2,6 +2,7 @@ from .DatabaseAccess import DatabaseAccess
 from .PDFProcessor import PDFProcessor
 from .VideoProcessor import VideoProcessor
 from .ESClient import ESClient
+import os
 
 class DataProcess:
     
@@ -14,11 +15,13 @@ class DataProcess:
         '''
 
         print("DataProcess~")
+        self.currentPath = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
         self.batchSize = batch_size
         self.DBer = DatabaseAccess()
         self.PDFer = PDFProcessor()
         self.Videoer = VideoProcessor()
         self.ESer = ESClient()
+        print('Current path: ', self.currentPath)
 
     def process(self):
         '''Fetch (self.batchSize) items and insert them into the ESClient
@@ -39,8 +42,8 @@ class DataProcess:
             pdfPath = item['pdfPath']
             videoPath = item['videoPath']
 
-            pdfText = self.PDFer.convert(pdfPath)
-            videoStruct = self.Videoer.convert(videoPath)
+            pdfText = self.PDFer.convert(self.currentPath + pdfPath)
+            videoStruct = self.Videoer.convert(self.currentPath + videoPath)
 
             itemToESClient['pdfText'] = pdfText
             itemToESClient['videoStruct'] = videoStruct
