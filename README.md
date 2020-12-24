@@ -26,9 +26,9 @@
 | :------: | :------: | :----------------------: |
 | DatabaseAccess |    0     |       **程赛华**       |
 | DataProcess |    1     |      **聂宇翔**       |
-| PDFProcessor |    1     | XXX |
-| VideoProcessor |    1     |   XXX          |
+| PDFProcessor |    1     | 孙凡淑 |
+| VideoProcessor |    1     |   闻子涵          |
 | ESClient |    2     |           **兰天**           |
 | SearchEngine |    3     |     **王昊**     |
-| DownloadClient |    3     | XXX  |
-| DownloadServer |    3     | XXX |
+| DownloadClient |    3     | 孔祥宜  |
+| DownloadServer |    3     | 公培元 |
