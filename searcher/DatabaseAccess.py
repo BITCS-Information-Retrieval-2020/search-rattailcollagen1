@@ -35,7 +35,7 @@ class DatabaseAccess:
 
     def read_batch(self, batch_size=1):
         """
-            读取数据库，每次读取number个数据，
+            读取数据库，每次读取batch_size个数据，
             并以list返回，list中的每一个元素为
             一个dict
             Parameters:
