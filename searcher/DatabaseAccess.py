@@ -1,4 +1,5 @@
 import pymongo
+import json
 
 
 class DatabaseAccess:
@@ -55,6 +56,21 @@ class DatabaseAccess:
         for item in batch_cursor:
             batch_list.append(item)
         return batch_list
+
+    def import_json_db(self, db_path='./data/papers.json'):
+        """
+            导入json格式的mongodb数据库
+            # TODO 可能有导入上限，如果文件过大，改用*mongoimport*工具
+        :param db_path: json文件路径
+        :return:
+        """
+        try:
+            with open(file=db_path, mode='r')as fp:
+                paper_list = json.load(fp=fp)
+                print('import {} papers.'.format(len(paper_list)))
+                insert_many_results = self.collection.insert_many(paper_list)
+        except FileNotFoundError as fe:
+            print(fe.strerror)
 
     def insert(self, item):
         insert_id = self.collection.insert_one(item)
