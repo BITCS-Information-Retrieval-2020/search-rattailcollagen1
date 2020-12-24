@@ -3,6 +3,7 @@ from .PDFProcessor import PDFProcessor
 from .VideoProcessor import VideoProcessor
 from .ESClient import ESClient
 import os
+import argparse
 
 class DataProcess:
     
@@ -33,26 +34,54 @@ class DataProcess:
                 4. Send the json list into the ESClient
 
         '''
+        while True:
+            """Iteratively fetch data from MongoDB"""
+            dataFromDB = self.DBer.read(number = self.batchSize)
+            if dataFromDB == []:
+                break
 
-        dataFromDB = self.DBer(self.batchSize)
-        dataToESClent = []
+            dataToESClient = []
+            for item in dataFromDB:
+                """Remove the dot symbol in the path string"""
+                if item['pdfPath'][0] == '.':
+                    del item['pdfPath'][0]
+                if item['videoPath'][0] == '.':
+                    del item['videoPath'][0]
+                itemToESClient = item.copy()
+                    
+                pdfPath = item['pdfPath']
+                videoPath = item['videoPath']
 
-        for item in dataFromDB:
-            itemToESClient = item.copy()
-            pdfPath = item['pdfPath']
-            videoPath = item['videoPath']
+                """Convert the corresponding pdf file and video file to the specific forms"""
+                if pdfPath != "":
+                    pdfText = self.PDFer.convert(self.currentPath + pdfPath)
+                    itemToESClient['pdfText'] = pdfText
+                else:
+                    itemToESClient['pdfText'] = ""
 
-            pdfText = self.PDFer.convert(self.currentPath + pdfPath)
-            videoStruct = self.Videoer.convert(self.currentPath + videoPath)
+                if videoPath != "":
+                    videoStruct = self.Videoer.convert(self.currentPath + videoPath)
+                    itemToESClient['videoStruct'] = videoStruct
+                else:
+                    itemToESClient['videoStruct'] = []
 
-            itemToESClient['pdfText'] = pdfText
-            itemToESClient['videoStruct'] = videoStruct
-
-            dataToESClent.append(itemToESClient)
-
-        self.ESer.update_index(dataToESClent, self.batchSize)
+                dataToESClient.append(itemToESClient)
+            
+            """Insert dict list into the ES system"""
+            self.ESer.update_index(data = dataToESClient, batch_size = len(dataToESClient))
+            
+            """Check if the cursor is in the end of the MongoDB"""
+            if len(dataToESClient) < self.batch_size:
+                break
         
-
-
-
-        
+if __name__ == '__main__':
+    """This script is to read data from MongoDB, process PDFs as well as videos, and insert
+        them into the ES system. 
+        We implement the process in several batches.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--batch_size", type = int, default=50)
+    args = parser.parse_args()
+    
+    dp = DataProcess(batch_size = args.batch_size)
+    dp.process()
