@@ -38,15 +38,21 @@ class DatabaseAccess:
         """
             读取数据库，每次读取batch_size个数据，
             并以list返回，list中的每一个元素为
-            一个dict
+            一个dict。
             Parameters:
                 batch_size: int
             Return:
                 a list of dict, list = [] or len(list) < batch_size  means no more data
         """
         self.batch_size = batch_size
-        batch_cursor = self.collection.find(
-            {'_id': {'$gte': self.batch_pointer, '$lt': self.batch_pointer + self.batch_size}})
+
+        # 如果集合中的主键从零开始一直连续，那么：
+        # batch_cursor = self.collection.find(
+        #     {'_id': {'$gte': self.batch_pointer, '$lt': self.batch_pointer + self.batch_size}})
+
+        # 如果集合中的主键中间存在中断，那么：
+        batch_cursor = self.collection.find().skip(self.batch_pointer).limit(self.batch_size)
+
         self.batch_pointer += self.batch_size
         return self.build_batch_list(batch_cursor=batch_cursor)
 
@@ -60,17 +66,22 @@ class DatabaseAccess:
     def import_json_db(self, db_path='./data/papers.json'):
         """
             导入json格式的mongodb数据库
-            # TODO 可能有导入上限，如果文件过大，改用*mongoimport*工具
+            # TODO 由于内存限制，可能有导入上限，如果文件过大，改用*mongoimport*工具
+
+            examples:
+                dba.import_json_db(db_path='./searcher/data/papers.json')
         :param db_path: json文件路径
         :return:
         """
         try:
-            with open(file=db_path, mode='r')as fp:
+            with open(file=db_path, mode='r', encoding='utf-8')as fp:
                 paper_list = json.load(fp=fp)
                 print('import {} papers.'.format(len(paper_list)))
                 insert_many_results = self.collection.insert_many(paper_list)
         except FileNotFoundError as fe:
             print(fe.strerror)
+        except UnicodeDecodeError as de:
+            print(de.reason)
 
     def insert(self, item):
         insert_id = self.collection.insert_one(item)
