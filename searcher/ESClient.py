@@ -3,7 +3,7 @@ import ipdb, random, time
 
 class ESClient:
 
-    def __init__(self, auth=('elastic', 'elastic123'), index_name='papers'):
+    def __init__(self, auth=('elastic', 'elastic123'), index_name='papers', delete=False):
         self.es = Elasticsearch(http_auth=auth)
         self.index_name = index_name
         self.mapping = {
@@ -54,7 +54,8 @@ class ESClient:
             }
         }
         # if not exist, create the index
-        self.es.indices.delete(index=self.index_name)
+        if delete:
+            self.es.indices.delete(index=self.index_name)
         if not self.es.indices.exists(index=self.index_name):
             self.es.indices.create(index=self.index_name)
             self.es.indices.put_mapping(body=self.mapping, index=self.index_name)
@@ -232,7 +233,7 @@ if __name__ == "__main__":
         },
     ]
     
-    esclient = ESClient()
+    esclient = ESClient(delete=True)
     # create index
     esclient.update_index(test_data, len(test_data))
     time.sleep(2)
