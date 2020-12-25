@@ -157,10 +157,9 @@ class ESClient:
         # elasticsearch flat the nested object
         dsl = {
             'query': {
-                # 'match': {
-                #     'year': 2001
-                # }
-                'match_all': {}
+                'match': {
+                    'full_field': query_text
+                }
             }
         }
         print(dsl)
