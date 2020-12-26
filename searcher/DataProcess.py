@@ -38,7 +38,7 @@ class DataProcess:
         '''
         while True:
             """Iteratively fetch data from MongoDB"""
-            dataFromDB = self.DBer.read(number = self.batchSize)
+            dataFromDB = self.DBer.read_batch(batch_size = self.batchSize)
             if dataFromDB == []:
                 break
 
