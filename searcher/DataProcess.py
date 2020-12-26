@@ -4,10 +4,12 @@ from .VideoProcessor import VideoProcessor
 from .ESClient import ESClient
 import os
 import argparse
+import logging
+# logging.basicConfig(level=logging.WARNING)
 
 class DataProcess:
     
-    def __init__(self, batch_size=200):
+    def __init__(self, delete_indices = False, batch_size=200):
         '''Initialize an object of DataProcess
 
             Parameters:
@@ -21,7 +23,7 @@ class DataProcess:
         self.DBer = DatabaseAccess()
         self.PDFer = PDFProcessor()
         self.Videoer = VideoProcessor()
-        self.ESer = ESClient()
+        self.ESer = ESClient(delete = delete_indices)
         print('Current path: ', self.currentPath)
 
     def process(self):
@@ -43,9 +45,9 @@ class DataProcess:
             dataToESClient = []
             for item in dataFromDB:
                 """Remove the dot symbol in the path string"""
-                if item['pdfPath'][0] == '.':
+                if item['pdfPath'] != "" and item['pdfPath'][0] == '.':
                     del item['pdfPath'][0]
-                if item['videoPath'][0] == '.':
+                if item['videoPath'] != "" and item['videoPath'][0] == '.':
                     del item['videoPath'][0]
                 itemToESClient = item.copy()
                     
@@ -68,10 +70,11 @@ class DataProcess:
                 dataToESClient.append(itemToESClient)
             
             """Insert dict list into the ES system"""
+            # logging.warning(dataToESClient)
             self.ESer.update_index(data = dataToESClient, batch_size = len(dataToESClient))
             
             """Check if the cursor is in the end of the MongoDB"""
-            if len(dataToESClient) < self.batch_size:
+            if len(dataToESClient) < self.batchSize:
                 break
         
 if __name__ == '__main__':

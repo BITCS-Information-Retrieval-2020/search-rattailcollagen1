@@ -28,3 +28,5 @@ class PDFProcessor:
             Return: 
                 a string of text
         '''
+        # test code
+        return "The ability to perform reasoning and inference over natural language is an important aspect of in- telligence. The task of question answering (QA) provides a quantifiable and objective way to test the reasoning ability of intelligent systems. To this end, a few large-scale QA datasets have been pro- posed, which sparked significant progress in this direction. However, existing datasets have limita- tions that hinder further advancements of machine reasoning over natural language, especially in test- ing QA systems’ ability to perform multi-hop rea- soning, where the system has to reason with in- formation taken from more than one document to arrive at the answer."
