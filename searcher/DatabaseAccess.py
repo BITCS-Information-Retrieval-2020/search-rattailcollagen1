@@ -63,7 +63,7 @@ class DatabaseAccess:
             batch_list.append(item)
         return batch_list
 
-    def import_json_db(self, db_path='./data/papers.json'):
+    def import_json_db(self, db_path='./data/papers.json', drop_flag=False):
         """
             导入json格式的mongodb数据库
             # TODO 由于内存限制，可能有导入上限，如果文件过大，改用*mongoimport*工具
@@ -71,13 +71,16 @@ class DatabaseAccess:
             examples:
                 dba.import_json_db(db_path='./searcher/data/papers.json')
         :param db_path: json文件路径
+        :param drop_flag: drop the collection if flag is true, keep the collection otherwise.
         :return:
         """
+        if drop_flag:
+            self.collection.drop()
         try:
             with open(file=db_path, mode='r', encoding='utf-8')as fp:
                 paper_list = json.load(fp=fp)
                 print('import {} papers.'.format(len(paper_list)))
-                insert_many_results = self.collection.insert_many(paper_list)
+                self.collection.insert_many(paper_list)
         except FileNotFoundError as fe:
             print(fe.strerror)
         except UnicodeDecodeError as de:
