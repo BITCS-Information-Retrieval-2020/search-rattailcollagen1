@@ -14,7 +14,7 @@ def load_mongodb(config_path):
         config = json.load(config_json)
     mongodb_path = config['mongodb_path']
     DBer = DatabaseAccess()
-    DBer.import_json_db(db_path = mongodb_path)
+    DBer.import_json_db(db_path = mongodb_path, drop_flag = True)
 
     print('load_mongodb: Done!')
 
