@@ -22,18 +22,6 @@ class DatabaseAccess:
         self.batch_pointer = 0
         self.batch_size = 1
 
-    def read(self, number=1):
-        """
-            读取数据库，每次读取number个数据，
-            并以list返回，list中的每一个元素为
-            一个dict
-            Parameters:
-                number: int
-            Return:
-                a list of dict
-        """
-        return self.read_batch(batch_size=number)
-
     def read_batch(self, batch_size=1):
         """
             读取数据库，每次读取batch_size个数据，
