@@ -1,3 +1,6 @@
+import xml.etree.ElementTree as ET
+import os
+import grobid_client_python.grobid_client as grobid
 class PDFProcessor:
 
     '''
@@ -12,6 +15,38 @@ class PDFProcessor:
     def __init__(self):
         pass
 
+    def PDFtoXML(self,pdf_dir):
+        xml_dir = './data/XMLs'
+        client = grobid.grobid_client(config_path="./grobid_client_python/config.json")
+        client.process("processFulltextDocument", input_path=pdf_dir,output=xml_dir,consolidate_citations=True, teiCoordinates=True, force=False)
+
+    @staticmethod
+    def parsexml(self,xml_path):
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        body = root.find('.//{http://www.tei-c.org/ns/1.0}body')
+        i = 0 
+        flag = 0
+        res = ''
+        for div in body.findall('.//{http://www.tei-c.org/ns/1.0}div'):
+            if 'CONCLUSION'in div[0].text or 'Conclusion' in div[0].text:
+                print('CCC IS CONCLUSION')
+                flag = 1
+            s = ''
+            i+=1
+            for p in div.findall('.//{http://www.tei-c.org/ns/1.0}p'):
+                s +=p.text
+                if len(p.findall('.//*')):
+                    for child in p.findall('.//*'):
+                        if child.tail:
+                            s += child.tail              
+            #print(f'{i}:{s}')
+            res += s
+            if flag:
+                break
+        return res
+
+       
     def convert(self, pdf_path):
         '''
             将pdf转换为txt
@@ -28,5 +63,23 @@ class PDFProcessor:
             Return: 
                 a string of text
         '''
-        # test code
-        return "The ability to perform reasoning and inference over natural language is an important aspect of in- telligence. The task of question answering (QA) provides a quantifiable and objective way to test the reasoning ability of intelligent systems. To this end, a few large-scale QA datasets have been pro- posed, which sparked significant progress in this direction. However, existing datasets have limita- tions that hinder further advancements of machine reasoning over natural language, especially in test- ing QA systems’ ability to perform multi-hop rea- soning, where the system has to reason with in- formation taken from more than one document to arrive at the answer."
+        pdf_basename = os.path.basename(pdf_path)
+        pdf_name = os.path.splitext(pdf_basename)[0]
+        xml_dir = './data/XMLs'
+        if not os.path.exists(xml_dir):
+            os.mkdir(xml_dir)
+        xml_path =os.path.join(xml_dir,f'{pdf_name}.tei.xml')
+        if not os.path.exists(xml_path):
+            print('XML IS NOT FOUND!')
+            print(xml_path)
+            client = grobid.grobid_client(config_path="./grobid_client_python/config.json")
+            client.process("processFulltextDocument", input_path=pdf_path,output=xml_dir,consolidate_citations=True, teiCoordinates=True, force=False)
+        res = self.parsexml(self,xml_path)
+        return res
+
+if __name__ == '__main__':
+    pdf = PDFProcessor()
+    pdf.PDFtoXML('/data/sfs/search-rattailcollagen1/searcher/data/PDFs')
+    res= pdf.convert('/data/sfs/search-rattailcollagen1/searcher/data/PDFs/nn.nnnn.nnnn.pdf')
+    print(res)
+
