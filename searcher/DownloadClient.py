@@ -28,7 +28,7 @@ class DownloadClient:
         :param path: 下载后的存储路径，目前计划是包内的一个固定路径，因此以默认参数形式存在，不允许修改
         :return: 下载是否成功，使用布尔值表示
         """
-        if not os.path.exists(os.getcwd() + "/" + path):
+        if not os.path.exists("./data/" + path):
             self.f_tag = False
             client = socket.socket()
             client.connect((ip, port))
@@ -53,7 +53,7 @@ class DownloadClient:
                 total_size = header_dic['file_size']
 
                 # 5.接受真实数据
-                with open(os.getcwd() + "/" + path, 'wb') as f:
+                with open("./data/" + path, 'wb') as f:
                     recv_size = 0
                     while recv_size < total_size:
                         line = client.recv(1024)

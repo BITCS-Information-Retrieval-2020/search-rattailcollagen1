@@ -40,7 +40,7 @@ class DownloadServer:
                     continue
                 # 解析命令 'get 1.pdf'
                 cmds = res.decode('utf-8').split()  # ['get','1.pdf']
-                path = os.getcwd() + "/" + cmds[1]  # '1.pdf'
+                path = "./data/" + cmds[1]  # '1.pdf'
                 # 以读的方式打开文件，提取文件内容发送给客户端
                 # 1.制作固定长度的报头
                 header_dic = {
