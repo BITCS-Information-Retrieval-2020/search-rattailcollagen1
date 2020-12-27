@@ -7,3 +7,7 @@
 /.ipynb*/
 /searcher/.ipynb*/
 /.vscode/
+/splits/
+/audio*
+/tmp*
+/searcher/grobid_client/__pycache__/

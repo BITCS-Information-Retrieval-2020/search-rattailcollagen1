@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 import os
-import grobid_client_python.grobid_client as grobid
+import grobid_client.grobid_client as grobid
 class PDFProcessor:
 
     '''
@@ -17,7 +17,7 @@ class PDFProcessor:
 
     def PDFtoXML(self,pdf_dir):
         xml_dir = f'{self.currentPath}/data/XMLs'
-        client = grobid.grobid_client(config_path=f'{self.currentPath}/grobid_client_python/config.json')
+        client = grobid.grobid_client(config_path=f'{self.currentPath}/grobid_client/config.json')
         client.process("processFulltextDocument", input_path=pdf_dir,output=xml_dir,consolidate_citations=True, teiCoordinates=True, force=False)
 
     @staticmethod
@@ -72,7 +72,7 @@ class PDFProcessor:
         if not os.path.exists(xml_path):
             print('XML IS NOT FOUND!')
             print(xml_path)
-            client = grobid.grobid_client(config_path=f'{self.currentPath}/grobid_client_python/config.json')
+            client = grobid.grobid_client(config_path=f'{self.currentPath}/grobid_client/config.json')
             client.process("processFulltextDocument", input_path=pdf_path,output=xml_dir,consolidate_citations=True, teiCoordinates=True, force=False)
         res = self.parsexml(self,xml_path)
         return res
