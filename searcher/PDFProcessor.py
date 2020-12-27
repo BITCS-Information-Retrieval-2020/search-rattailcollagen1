@@ -13,11 +13,11 @@ class PDFProcessor:
     '''
 
     def __init__(self):
-        pass
+        self.currentPath = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
 
     def PDFtoXML(self,pdf_dir):
-        xml_dir = './data/XMLs'
-        client = grobid.grobid_client(config_path="./grobid_client_python/config.json")
+        xml_dir = f'{self.currentPath}/data/XMLs'
+        client = grobid.grobid_client(config_path=f'{self.currentPath}/grobid_client_python/config.json')
         client.process("processFulltextDocument", input_path=pdf_dir,output=xml_dir,consolidate_citations=True, teiCoordinates=True, force=False)
 
     @staticmethod
@@ -65,14 +65,14 @@ class PDFProcessor:
         '''
         pdf_basename = os.path.basename(pdf_path)
         pdf_name = os.path.splitext(pdf_basename)[0]
-        xml_dir = './data/XMLs'
+        xml_dir = f'{self.currentPath}/data/XMLs'
         if not os.path.exists(xml_dir):
             os.mkdir(xml_dir)
         xml_path =os.path.join(xml_dir,f'{pdf_name}.tei.xml')
         if not os.path.exists(xml_path):
             print('XML IS NOT FOUND!')
             print(xml_path)
-            client = grobid.grobid_client(config_path="./grobid_client_python/config.json")
+            client = grobid.grobid_client(config_path=f'{self.currentPath}/grobid_client_python/config.json')
             client.process("processFulltextDocument", input_path=pdf_path,output=xml_dir,consolidate_citations=True, teiCoordinates=True, force=False)
         res = self.parsexml(self,xml_path)
         return res
