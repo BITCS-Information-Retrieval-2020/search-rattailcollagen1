@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import os
-import grobid_client.grobid_client as grobid
+import .grobid_client as grobid
+
 class PDFProcessor:
 
     '''
@@ -15,9 +16,13 @@ class PDFProcessor:
     def __init__(self):
         self.currentPath = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
 
-    def PDFtoXML(self,pdf_dir):
-        xml_dir = f'{self.currentPath}/data/XMLs'
-        client = grobid.grobid_client(config_path=f'{self.currentPath}/grobid_client/config.json')
+    def PDFtoXML(self,server,port,pdf_dir):
+        #xml_dir = f'{self.currentPath}/data/XMLs'
+        xml_dir = os.path.join(os.path.dirname(pdf_dir),'XMLs')
+        if not os.path.exists(xml_dir):
+            print(xml_dir)
+            os.makedirs(xml_dir)
+        client = grobid.grobid_client(config_path=f'{self.currentPath}/grobid_client/config.json',grobid_server=server,grobid_port=port)
         client.process("processFulltextDocument", input_path=pdf_dir,output=xml_dir,consolidate_citations=True, teiCoordinates=True, force=False)
 
     @staticmethod
@@ -47,7 +52,7 @@ class PDFProcessor:
         return res
 
        
-    def convert(self, pdf_path):
+    def convert(self, server, port, pdf_path):
         '''
             将pdf转换为txt
             
@@ -65,21 +70,23 @@ class PDFProcessor:
         '''
         pdf_basename = os.path.basename(pdf_path)
         pdf_name = os.path.splitext(pdf_basename)[0]
-        xml_dir = f'{self.currentPath}/data/XMLs'
+        pdf_dir = os.path.dirname(pdf_path)
+        xml_dir = os.path.join(os.path.dirname(pdf_dir),'XMLs')
         if not os.path.exists(xml_dir):
-            os.mkdir(xml_dir)
+            os.makedirs(xml_dir)
         xml_path =os.path.join(xml_dir,f'{pdf_name}.tei.xml')
         if not os.path.exists(xml_path):
             print('XML IS NOT FOUND!')
             print(xml_path)
-            client = grobid.grobid_client(config_path=f'{self.currentPath}/grobid_client/config.json')
+            client = grobid.grobid_client(config_path=f'{self.currentPath}/grobid_client/config.json',grobid_server=server,grobid_port=port)
             client.process("processFulltextDocument", input_path=pdf_path,output=xml_dir,consolidate_citations=True, teiCoordinates=True, force=False)
         res = self.parsexml(self,xml_path)
         return res
 
 if __name__ == '__main__':
     pdf = PDFProcessor()
-    pdf.PDFtoXML('/data/sfs/search-rattailcollagen1/searcher/data/PDFs')
-    res= pdf.convert('/data/sfs/search-rattailcollagen1/searcher/data/PDFs/nn.nnnn.nnnn.pdf')
-    print(res)
+    pdf.PDFtoXML('localhost','8070','/data/sfs/search-rattailcollagen1/searcher/data/2/PDFs')
+    #res= pdf.convert('localhost','8070','/data/sfs/search-rattailcollagen1/searcher/data/2/PDFs/2009.14720.pdf')
+    #print(res)
+    
 

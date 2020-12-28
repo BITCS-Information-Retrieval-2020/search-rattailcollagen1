@@ -132,6 +132,11 @@ class VideoProcessor:
         '''
 
         videoToSpeech(video_path, target="tmp.wav")
+        if os.path.exists('splits'):
+            files = os.listdir('splits')
+            for file in files:
+                os.remove('./splits/' + file)
+            os.removedirs('splits')
         os.makedirs("splits")
         chunks, chunk_lens = speech_split("tmp.wav", "splits")
 

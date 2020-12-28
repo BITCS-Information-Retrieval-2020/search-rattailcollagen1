@@ -5,8 +5,8 @@ import json
 import argparse
 import time
 import concurrent.futures
-#from client import ApiClient
-from grobid_client.client import ApiClient
+from .client import ApiClient
+
 import ntpath
 import requests
 
@@ -21,10 +21,12 @@ implemented for the moment.
 '''
 class grobid_client(ApiClient):
 
-    def __init__(self, config_path='./config.json'):
+    def __init__(self, config_path='./config.json',grobid_server='', grobid_port=''):
         self.config = None
+        self.grobid_server = grobid_server
+        self.grobid_port = grobid_port
         self._load_config(config_path)
-
+        
     def _load_config(self, path='./config.json'):
         """
         Load the json configuration 
@@ -33,9 +35,10 @@ class grobid_client(ApiClient):
         self.config = json.loads(config_json)
 
         # test if the server is up and running...
-        the_url = 'http://'+self.config['grobid_server']
-        if len(self.config['grobid_port'])>0:
-            the_url += ":"+self.config['grobid_port']
+        #the_url = 'http://'+self.config['grobid_server']
+        the_url = 'http://'+ self.grobid_server
+        if len(self.grobid_port)>0:
+            the_url += ":"+ self.grobid_port
         the_url += "/api/isalive"
         r = requests.get(the_url)
         status = r.status_code
