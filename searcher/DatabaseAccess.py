@@ -1,6 +1,8 @@
 import pymongo
 import json
 
+from pymongo.errors import BulkWriteError
+
 
 class DatabaseAccess:
     """
@@ -10,15 +12,33 @@ class DatabaseAccess:
         外层调用程序将通过self.read函数来批量读取MongoDB中的dict数据。
     """
 
-    SERVICE_PATH = 'mongodb://127.0.0.1:27017'
-    SERVICE_NAME = 'mongodb'
-    COLLECTION_NAME = 'papers'
+    DEFAULT_SERVICE_PATH = 'mongodb://127.0.0.1:27017'
+    DEFAULT_SERVICE_NAME = 'mongodb'
+    DEFAULT_COLLECTION_NAME = 'papers'
 
-    def __init__(self):
-        self.client = pymongo.MongoClient(DatabaseAccess.SERVICE_PATH)
-        self.database = self.client[DatabaseAccess.SERVICE_NAME]
-        self.collection = self.database[DatabaseAccess.COLLECTION_NAME]
+    def __init__(self,
+                 service_path=DEFAULT_SERVICE_PATH,
+                 service_name=DEFAULT_SERVICE_NAME,
+                 collection_name=DEFAULT_COLLECTION_NAME,
+                 increment_beginning_pointer=-1):
+        """
 
+        :param service_path: 'mongodb://user:password@address:port/service_name'
+        :param service_name: 'crawler'
+        :param collection_name: 'papers'
+        :param increment_beginning_pointer: -1 if default. maximum _id of the last increment data if specified.
+        """
+        self.service_path = service_path
+        self.service_name = service_name
+        self.collection_name = collection_name
+
+        self.client = pymongo.MongoClient(self.service_path)
+        self.database = self.client[self.service_name]
+        self.collection = self.database[self.collection_name]
+
+        # 上次增量数据集合的最大id
+        self.increment_beginning_pointer = increment_beginning_pointer
+        # TODO 最后可能修改初始值为increment_beginning_pointer，并调整read_batch
         self.batch_pointer = 0
         self.batch_size = 1
 
@@ -36,10 +56,12 @@ class DatabaseAccess:
 
         # 如果集合中的主键从零开始一直连续，那么：
         # batch_cursor = self.collection.find(
-        #     {'_id': {'$gte': self.batch_pointer, '$lt': self.batch_pointer + self.batch_size}})
+        #     {'_id': {'$gt': self.increment_beginning_pointer + self.batch_pointer,
+        #              '$lt': self.increment_beginning_pointer + self.batch_pointer + self.batch_size}})
 
         # 如果集合中的主键中间存在中断，那么：
-        batch_cursor = self.collection.find().skip(self.batch_pointer).limit(self.batch_size)
+        batch_cursor = self.collection.find({'_id': {'$gt': self.increment_beginning_pointer}}).skip(
+            self.batch_pointer).limit(self.batch_size)
 
         self.batch_pointer += self.batch_size
         return self.build_batch_list(batch_cursor=batch_cursor)
@@ -58,12 +80,14 @@ class DatabaseAccess:
 
             examples:
                 dba.import_json_db(db_path='./searcher/data/papers.json')
+            mongo import:
+                mongoimport --port 27030 -u sa -p Expressin@0618 -d mapdb -c bike_bak  --type=json --file bike.csv
         :param db_path: json文件路径
         :param drop_flag: drop the collection if flag is true, keep the collection otherwise.
         :return:
         """
         if drop_flag:
-            self.collection.drop()
+            self.safe_drop()
         try:
             with open(file=db_path, mode='r', encoding='utf-8')as fp:
                 paper_list = json.load(fp=fp)
@@ -73,7 +97,16 @@ class DatabaseAccess:
             print(fe.strerror)
         except UnicodeDecodeError as de:
             print(de.reason)
+        except BulkWriteError as be:
+            print('primary key conflict occurred 0and partial insertion was successful:{}'.format(be.details))
 
-    def insert(self, item):
-        insert_id = self.collection.insert_one(item)
-        return insert_id
+    def safe_drop(self):
+        """
+            为确保不会突然把远程数据库清空。
+        :return:
+        """
+        if self.service_path == DatabaseAccess.DEFAULT_SERVICE_PATH:
+            self.collection.drop()
+            print('drop successfully.')
+        else:
+            print('Cannot drop any collection of remote database!:{}'.format(self.service_path))
