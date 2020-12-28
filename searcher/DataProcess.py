@@ -5,6 +5,7 @@ from .ESClient import ESClient
 import os
 import argparse
 import logging
+from time import sleep
 # logging.basicConfig(level=logging.WARNING)
 
 class DataProcess:
@@ -20,6 +21,7 @@ class DataProcess:
         print("DataProcess~")
         self.currentPath = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
         self.batchSize = batch_size
+        self.sleep_time = 2
         self.DBer = DatabaseAccess()
         self.PDFer = PDFProcessor()
         self.Videoer = VideoProcessor()
@@ -38,6 +40,7 @@ class DataProcess:
         '''
         while True:
             """Iteratively fetch data from MongoDB"""
+            sleep(self.sleep_time)
             dataFromDB = self.DBer.read_batch(batch_size = self.batchSize)
             if dataFromDB == []:
                 break
