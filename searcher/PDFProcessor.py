@@ -19,8 +19,7 @@ class PDFProcessor:
 
     def PDFtoXML(self,server,port,pdf_dir):
         #xml_dir = f'{self.currentPath}/data/XMLs'
-        #xml_dir = os.path.join(os.path.dirname(pdf_dir),'XMLs')
-        xml_dir = f'{os.path.dirname(pdf_dir)}/XMLs'
+        xml_dir = os.path.join(os.path.dirname(pdf_dir),'XMLs')
         if not os.path.exists(xml_dir):
             print(xml_dir)
             os.makedirs(xml_dir)
@@ -73,8 +72,7 @@ class PDFProcessor:
         pdf_basename = os.path.basename(pdf_path)
         pdf_name = os.path.splitext(pdf_basename)[0]
         pdf_dir = os.path.dirname(pdf_path)
-        #xml_dir = os.path.join(os.path.dirname(pdf_dir),'XMLs')
-        xml_dir = f'{os.path.dirname(pdf_dir)}/XMLs'
+        xml_dir = os.path.join(os.path.dirname(pdf_dir),'XMLs')
         if not os.path.exists(xml_dir):
             os.makedirs(xml_dir)
         xml_path =os.path.join(xml_dir,f'{pdf_name}.tei.xml')
