@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 import os
-import grobid_client.grobid_client as grobid
+from .grobid_client import grobid_client as grobid
 class PDFProcessor:
 
     '''
