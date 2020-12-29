@@ -50,8 +50,7 @@ class ESClient:
                 # _all field
                 'full_field': {
                     'type': 'text',
-                },
-                'hot'
+                }
             }
         }
         # if not exist, create the index
