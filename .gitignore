@@ -6,3 +6,10 @@
 /.idea/
 /.ipynb*/
 /searcher/.ipynb*/
+/.vscode/
+/splits/
+/audio*
+/tmp*
+/searcher/grobid_client/__pycache__/
+/searcher/data/1/
+/searcher/data/2/
