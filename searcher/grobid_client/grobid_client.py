@@ -111,9 +111,9 @@ class grobid_client(ApiClient):
             )
         }
         
-        the_url = 'http://'+self.config['grobid_server']
-        if len(self.config['grobid_port'])>0:
-            the_url += ":"+self.config['grobid_port']
+        the_url = 'http://'+self.grobid_server
+        if len(self.grobid_port)>0:
+            the_url += ":"+self.grobid_port
         the_url += "/api/"+service
 
         # set the GROBID parameters
