@@ -1,5 +1,5 @@
 from elasticsearch import Elasticsearch, helpers
-import ipdb, random, time
+import ipdb, random, time, json, pprint
 
 class ESClient:
 
@@ -51,6 +51,7 @@ class ESClient:
                 'full_field': {
                     'type': 'text',
                 },
+                'hot'
             }
         }
         # if not exist, create the index
@@ -130,10 +131,8 @@ class ESClient:
     def search_mode_2(self, query, operator, topn):
         bool_ = {'must': [], 'must_not': [], 'should': []}
         for (key, value), op in zip(query.items(), operator):
-            if op == 'OR':
+            if op in ['OR', 'AND']:
                 bool_['should'].append({"match": {key: value}})
-            elif op == 'AND':
-                bool_['must'].append({"match": {key: value}})
             elif op == 'NOT':
                 bool_['must_not'].append({"match": {key: value}})
             elif not op:
@@ -158,7 +157,7 @@ class ESClient:
         dsl = {
             'query': {
                 'match': {
-                    'full_field': query_text
+                    'sentence': query_text
                 }
             }
         }
@@ -173,100 +172,41 @@ class ESClient:
         
 if __name__ == "__main__":
     # test data
-    test_data = [
-        {
-            "_id": 0,
-            "title": "[Oral at NeurIPS 2020] DVERGE: Diversifying Vulnerabilities for Enhanced Robust Generation of Ensembles",
-            "authors": "Huanrui Yang, Jingyang Zhang, Hongliang Dong, Nathan Inkawhich, Andrew Gardner, Andrew Touchet, Wesley Wilkes, Heath Berry, Hai Li",
-            "abstract": "Recent research finds CNN models...",
-            "publicationOrg": 'NeurIPS',
-            "year": 2020,
-            "pdfUrl": "...",
-            "pdfPath": "/data/PDFs/xx.pdf",
-            "publicationUrl": "https://papers.nips.cc/paper/2020/hash/3ad7c2ebb96fcba7cda0cf54a2e802f5-Abstract.html",
-            "codeUrl": "https://github.com/zjysteven/DVERGE",
-            "datasetUrl": "https://drive.google.com/drive/folders/1i96Bk_bCWXhb7afSNp1t3woNjO1kAMDH?usp=sharing",
-            "videoUrl": "",
-            "videoPath": "/data/videos/xx.*",
-            "pdfText": "Alternatively, ensemble methods are proposed to induce sub-models...",
-            "videoStruct": [
-                {
-                    "timeStart": "hh-mm-ss",
-                    "timeEnd": "hh-mm-ss",
-                    "sentence": "Only small clean accuracy drop is observed in the process."
-                },
-                {
-                    "timeStart": "hh-mm-ss",
-                    "timeEnd": "hh-mm-ss",
-                    "sentence": "Our dual certifiers leverage Douglas-Rachford Splitting to solve a convex feasibility SDP."
-                }
-            ]
-        },
-        {
-            "_id": 1,
-            "title": "CNN for Text Hashing",
-            "authors": "Jianan Guo, Xianling mao, heyan huang",
-            "abstract": "we study the deep semantic hashing for text retrieval",
-            "publicationOrg": 'WWW',
-            "year": 2005,
-            "pdfUrl": "...",
-            "pdfPath": "/data/PDFs/xx.pdf",
-            "publicationUrl": "https://papers.nips.cc/paper/2020/hash/3ad7c2ebb96fcba7cda0cf54a2e802f5-Abstract.html",
-            "codeUrl": "https://github.com/zjysteven/DVERGE",
-            "datasetUrl": "https://drive.google.com/drive/folders/1i96Bk_bCWXhb7afSNp1t3woNjO1kAMDH?usp=sharing",
-            "videoUrl": "",
-            "videoPath": "/data/videos/xx.*",
-            "pdfText": "Alternatively, ensemble methods are proposed to induce sub-models...",
-            "videoStruct": [
-                {
-                    "timeStart": "hh-mm-ss",
-                    "timeEnd": "hh-mm-ss",
-                    "sentence": "Hashing is very effective technique."
-                },
-                {
-                    "timeStart": "hh-mm-ss",
-                    "timeEnd": "hh-mm-ss",
-                    "sentence": "our method outperform"
-                }
-            ]
-        },
-    ]
+    with open('/home/lt/data/papers.json', 'rb') as f:
+        test_data = json.load(f)
     
     esclient = ESClient(delete=True)
     # create index
     esclient.update_index(test_data, len(test_data))
     time.sleep(2)
     # search
-    '''
-    # query 1
-    query = {
+    query1 = {
+        "type": 0,
+        "top_number": 5,
+        "query_text": "DVERGE: Diversifying Vulnerabilities for Enhanced Robust Generation of Ensembles"
+    }
+    rest = esclient.search(query1)
+    pprint.pprint(f'rest1: {rest}')
+
+    query2 = {
         "type": 1,
         "top_number": 10,
-        "query_text":{
-            "title": "NeurIPS",
-            "authors": "Huanrui",
+        "query_text": {
+            "title": "[Oral at NeurIPS 2020] DVERGE: Diversifying Vulnerabilities for Enhanced Robust Generation of Ensembles",
+            "authors": "",
             "abstract": "",
-            "pdfText": "GNN",
-            'year': 2001,
+            "content": "",
+            "year": 2020,
         },
-        "operator": ["OR", "AND", "", "NOT"] 
+        "operator": ["AND", "", "", "", "NOT"]
     }
-    '''
-    '''
-    # query 2
-    query = {
-        "type": 0,
-        "top_number": 10,
-        "query_text": "NeurIPS"
-    }
-    '''
-    # '''
-    # query 3
-    query = {
+    rest = esclient.search(query2)
+    pprint.pprint(f'rest2: {rest}')
+
+    query3 = {
         "type": 2,
         "top_number": 10,
-        "query_text": "outperform"
+        "query_text": "machine"
     }
-    # '''
-    rest = esclient.search(query)
-    print(rest)
+    rest = esclient.search(query3)
+    pprint.pprint(f'rest3: {rest}')
