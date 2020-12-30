@@ -74,7 +74,8 @@ class DataProcess:
             
             """Insert dict list into the ES system"""
             # logging.warning(dataToESClient)
-            self.ESer.update_index(data = dataToESClient, batch_size = len(dataToESClient))
+            status = self.ESer.update_index(data = dataToESClient, batch_size = len(dataToESClient))
+            logging.info(status)
             sleep(self.sleep_time)
             """Check if the cursor is in the end of the MongoDB"""
             if len(dataToESClient) < self.batchSize:

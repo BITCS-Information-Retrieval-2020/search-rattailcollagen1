@@ -37,12 +37,19 @@ def test_query(config):
     """check if the elasticsearch can work independently"""
     esclient = ESClient(delete=False)
     query = {
-        "type": 2,
+        "type": 1,
         "top_number": 10,
-        "query_text": "machine"
+        "query_text": {
+            "title": "[Oral at NeurIPS 2020] DVERGE: Diversifying Vulnerabilities for Enhanced Robust Generation of Ensembles",
+            "authors": "",
+            "abstract": "",
+            "content": "",
+            "year": 2020,
+        },
+        "operator": ["AND", "", "", "", "AND"]
     }
     rest = esclient.search(query)
-    logging.warning(rest)
+    logging.warning('len: ' + str(len(rest)))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
