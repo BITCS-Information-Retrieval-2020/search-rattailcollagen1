@@ -1,5 +1,5 @@
 from elasticsearch import Elasticsearch, helpers
-import ipdb, random, time, json, pprint
+import ipdb, random, time, json, pprint, logging
 
 class ESClient:
 
@@ -99,6 +99,7 @@ class ESClient:
             query: query的解析在类内实现
             return: a list of dicts
         '''
+        logging.info(f'QUERY: {query}')
         try:
             mode, topn = query['type'], query['top_number']
             if mode == 0:
@@ -107,9 +108,10 @@ class ESClient:
                 rest = self.search_mode_2(query['query_text'], query['operator'], topn)
             elif mode == 2:
                 rest = self.search_mode_3(query['query_text'], topn)
+            logging.info(f'REST: {rest}')
             return rest
         except Exception as e:
-            print(f'[!] search failed: {e}')
+            logging.info(f'[!] search failed: {e}')
             return []
         
     def search_mode_1(self, query_text, topn):
@@ -197,7 +199,7 @@ if __name__ == "__main__":
             "content": "",
             "year": 2020,
         },
-        "operator": ["AND", "", "", "", "NOT"]
+        "operator": ["AND", "", "", "", "AND"]
     }
     rest = esclient.search(query2)
     pprint.pprint(f'rest2: {rest}')
