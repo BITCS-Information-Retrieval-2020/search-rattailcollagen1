@@ -28,7 +28,7 @@ class DataProcess:
         self.ESer = ESClient(delete = delete_indices)
         print('Current path: ', self.currentPath)
 
-    def process(self):
+    def process(self, pdf_ip, pdf_port):
         '''Fetch (self.batchSize) items and insert them into the ESClient
 
             Basic process:
@@ -40,7 +40,6 @@ class DataProcess:
         '''
         while True:
             """Iteratively fetch data from MongoDB"""
-            sleep(self.sleep_time)
             dataFromDB = self.DBer.read_batch(batch_size = self.batchSize)
             if dataFromDB == []:
                 break
@@ -59,13 +58,14 @@ class DataProcess:
 
                 """Convert the corresponding pdf file and video file to the specific forms"""
                 if pdfPath != "":
-                    pdfText = self.PDFer.convert(self.currentPath + pdfPath)
+                    pdfText = self.PDFer.convert(server=pdf_ip, port=pdf_port, \
+                    pdf_path=self.currentPath + pdfPath)
                     itemToESClient['pdfText'] = pdfText
                 else:
                     itemToESClient['pdfText'] = ""
 
                 if videoPath != "":
-                    videoStruct = self.Videoer.convert(self.currentPath + videoPath)
+                    videoStruct = []#self.Videoer.convert(self.currentPath + videoPath)
                     itemToESClient['videoStruct'] = videoStruct
                 else:
                     itemToESClient['videoStruct'] = []
@@ -75,7 +75,7 @@ class DataProcess:
             """Insert dict list into the ES system"""
             # logging.warning(dataToESClient)
             self.ESer.update_index(data = dataToESClient, batch_size = len(dataToESClient))
-            
+            sleep(self.sleep_time)
             """Check if the cursor is in the end of the MongoDB"""
             if len(dataToESClient) < self.batchSize:
                 break

@@ -3,32 +3,37 @@
 from searcher.DataProcess import DataProcess
 from searcher.DatabaseAccess import DatabaseAccess
 from searcher.ESClient import ESClient
+from searcher.PDFProcessor import PDFProcessor
 import argparse
 import json
+import os
 import logging
 logging.basicConfig(level=logging.WARNING)
 
-def load_mongodb(config_path):
+
+def load_mongodb(config):
     """load mongodb from a json file"""
-    with open(config_path, 'r', encoding='utf-8') as config_json:
-        config = json.load(config_json)
     mongodb_path = config['mongodb_path']
     DBer = DatabaseAccess()
     DBer.import_json_db(db_path = mongodb_path, drop_flag = True)
 
     print('load_mongodb: Done!')
 
-def build_indices(config_path):
+def process_pdf(config, pdf_ip, pdf_port):
+    """process pdfs in the pdf_dir"""
+    PDFer = PDFProcessor()
+    pdf_dir = config['pdf_dir']
+    PDFer.PDFtoXML(server=pdf_ip, port=pdf_port, pdf_dir=pdf_dir)
+
+def build_indices(config, pdf_ip, pdf_port):
     """build ES indices using the current mongodb database"""
-    with open(config_path, 'r', encoding='utf-8') as config_json:
-        config = json.load(config_json)
     batch_size = config['batch_size']
     Dper = DataProcess(delete_indices=True, batch_size=batch_size)
-    Dper.process()
+    Dper.process(pdf_ip=pdf_ip, pdf_port=pdf_port)
 
     print('build_indices: Done!')
 
-def test_query(config_path):
+def test_query(config):
     """check if the elasticsearch can work independently"""
     esclient = ESClient(delete=False)
     query = {
@@ -43,13 +48,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", default='test_query', type=str)
     parser.add_argument("--config", type=str, default="./config.json", help='the path to config.json')
+    parser.add_argument("--pdf_ip", type=str, default='localhost', help='ip of grobid server')
+    parser.add_argument("--pdf_port", type=str, default='8070', help='port of grobid server')
     args = parser.parse_args()
 
+    with open(args.config, 'r', encoding='utf-8') as config_json:
+        config = json.load(config_json)
+
     if args.mode == 'load_mongodb':
-        load_mongodb(config_path = args.config)
+        load_mongodb(config=config)
+    elif args.mode == 'process_pdf':
+        process_pdf(config=config, pdf_ip=args.pdf_ip, pdf_port=args.pdf_port)
     elif args.mode == 'build_indices':
-        build_indices(config_path = args.config)
+        build_indices(config=config, pdf_ip=args.pdf_ip, pdf_port=args.pdf_port)
     elif args.mode == 'test_query':
-        test_query(config_path = args.config)
+        test_query(config=config)
     else:
         print('Invaild action!')

@@ -1,6 +1,7 @@
 {
     "mongodb_path": "./searcher/data/MongoDB/papers.json",
-    "PDF_path": "./searcher/data/PDFs/",
-    "video_path": "./searcher/data/videos/",
-    "batch_size": 128
+    "PDF_path": "./searcher/data/PDFs",
+    "video_path": "./searcher/data/videos",
+    "batch_size": 128,
+    "pdf_dir": "./searcher/data/PDFs" 
 }
