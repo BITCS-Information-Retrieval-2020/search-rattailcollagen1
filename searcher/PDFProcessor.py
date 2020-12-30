@@ -19,7 +19,10 @@ class PDFProcessor:
 
     def PDFtoXML(self,server,port,pdf_dir):
         #xml_dir = f'{self.currentPath}/data/XMLs'
-        xml_dir = os.path.join(os.path.dirname(pdf_dir),'XMLs')
+        if os.path.basename(pdf_dir) == '':
+            xml_dir = os.path.join(os.path.dirname(os.path.dirname(pdf_dir)),'XMLs')
+        else:
+            xml_dir = os.path.join(os.path.dirname(pdf_dir),'XMLs')
         if not os.path.exists(xml_dir):
             print(xml_dir)
             os.makedirs(xml_dir)
