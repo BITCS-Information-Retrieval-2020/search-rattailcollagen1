@@ -121,7 +121,8 @@ class VideoProcessor:
 
     def video2text(self,videos_path):
         #创建json文件夹
-        dir = videos_path + 'struct'
+        parent_path = os.path.abspath(os.path.join(video_path, '..')
+        dir = os.path.join(parent_path, 'videosstruct')
         if os.path.exists(dir):
             files = os.listdir(dir)
             for file in files:
