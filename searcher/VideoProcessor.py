@@ -122,13 +122,13 @@ class VideoProcessor:
     def video2text(self,videos_path):
         #创建json文件夹
         parent_path = os.path.abspath(os.path.join(video_path, '..')
-        dir = os.path.join(parent_path, 'videosstruct')
-        if os.path.exists(dir):
-            files = os.listdir(dir)
+        struct_path = os.path.join(parent_path, 'videosstruct')
+        if os.path.exists(struct_path):
+            files = os.listdir(struct_path)
             for file in files:
-                os.remove(os.path.join(dir, file))
-            os.removedirs(dir)
-        os.makedirs(dir)
+                os.remove(os.path.join(struct_path, file))
+            os.removedirs(struct_path)
+        os.makedirs(struct_path)
         
         video_files = os.listdir(videos_path)
         for video_file in video_files:
@@ -160,7 +160,7 @@ class VideoProcessor:
             os.removedirs("splits")
             #将list存进json文件中
             print(text_list)
-            json_path = os.path.join(dir, video_file.split('.')[0]+'.json')
+            json_path = os.path.join(struct_path, video_file.split('.')[0]+'.json')
             with open(json_path,'w') as file_obj:
                 json.dump(text_list, file_obj)
             
@@ -182,8 +182,8 @@ class VideoProcessor:
                     }
         '''
         base_name = os.path.basename(video_path)
-        dir = os.path.join(os.path.abspath(os.path.join(video_path,'..','..')),'videosstruct')
-        json_path = os.path.join(dir, base_name.split('.')[0]+'.json')
+        struct_path = os.path.join(os.path.abspath(os.path.join(video_path,'..','..')),'videosstruct')
+        json_path = os.path.join(struct_path, base_name.split('.')[0]+'.json')
         print(json_path)
         if os.path.exists(json_path):
             with open(json_path) as fp:
@@ -214,4 +214,3 @@ class VideoProcessor:
         os.remove("tmp.wav")
         os.removedirs("splits")
         return text_list
-
