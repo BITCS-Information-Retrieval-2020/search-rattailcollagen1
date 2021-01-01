@@ -119,7 +119,7 @@ class VideoProcessor:
         pass
 
 
-    def video2text(self,videos_path):
+    def video2text(self,videos_path, force_process=False):
         #创建json文件夹
         parent_path = os.path.abspath(os.path.join(videos_path, '..'))
         struct_path = os.path.join(parent_path, 'videosstruct')
