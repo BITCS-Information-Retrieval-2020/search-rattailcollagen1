@@ -121,7 +121,7 @@ class VideoProcessor:
 
     def video2text(self,videos_path):
         #创建json文件夹
-        parent_path = os.path.abspath(os.path.join(video_path, '..')
+        parent_path = os.path.abspath(os.path.join(videos_path, '..'))
         struct_path = os.path.join(parent_path, 'videosstruct')
         if os.path.exists(struct_path):
             files = os.listdir(struct_path)
@@ -133,7 +133,7 @@ class VideoProcessor:
         video_files = os.listdir(videos_path)
         for video_file in video_files:
             
-            if operator.eq(video_file.split('.')[1],'mp4') is False:
+            if operator.eq(video_file.split('.')[-1],'mp4') is False:
                 continue
             video_path = os.path.join(videos_path,video_file)
             videoToSpeech(video_path, target="tmp.wav")
