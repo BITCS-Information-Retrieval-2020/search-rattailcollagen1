@@ -123,7 +123,7 @@ class VideoProcessor:
         #创建json文件夹
         parent_path = os.path.abspath(os.path.join(videos_path, '..'))
         struct_path = os.path.join(parent_path, 'videosstruct')
-        if os.path.exists(struct_path) == -1:
+        if os.path.exists(struct_path) is False:
             os.makedirs(struct_path)
             # files = os.listdir(struct_path)
             # for file in files:
@@ -133,7 +133,8 @@ class VideoProcessor:
         
         video_files = os.listdir(videos_path)
         for video_file in video_files:
-            json_path = os.path.join(struct_path, video_file.split('.')[0]+'.json')
+            #json_path = os.path.join(struct_path, video_file.split('.')[-1]+'.json')
+            json_path = os.path.join(struct_path, '.'.join(video_file.split('.')[:-1])+'.json')
             if operator.eq(video_file.split('.')[-1],'mp4') is False:
                 continue
             if force_process is False and os.path.exists(json_path):
@@ -157,7 +158,7 @@ class VideoProcessor:
                 os.remove("splits/" + each)
                 if sentence is None:
                     continue
-                tmp = {'timeStart': start, 'timeEnd': end,  'sentence': sentence}
+                tmp = {'timeStart': start, 'timeEnd': end,  'sentence': sentence[0]}
                 text_list.append(tmp)
             os.remove("tmp.wav")
             os.removedirs("splits")
