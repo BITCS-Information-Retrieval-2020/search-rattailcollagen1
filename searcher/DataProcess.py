@@ -28,7 +28,7 @@ class DataProcess:
         self.ESer = ESClient(delete = delete_indices)
         print('Current path: ', self.currentPath)
 
-    def process(self, pdf_ip, pdf_port):
+    def process(self, pdf_ip, pdf_port, cache_dir_index=1):
         '''Fetch (self.batchSize) items and insert them into the ESClient
 
             Basic process:
@@ -49,10 +49,17 @@ class DataProcess:
                 """Remove the dot symbol in the path string"""
                 if item['pdfPath'] != "" and item['pdfPath'][0] == '.':
                     del item['pdfPath'][0]
+                if item['pdfPath'][0:5] == "/data":
+                    item['pdfPath'] = item['pdfPath'][5:]
                 if item['videoPath'] != "" and item['videoPath'][0] == '.':
                     del item['videoPath'][0]
+                if item['videoPath'][0:5] == "/data":
+                    item['videoPath'] = item['videoPath'][5:]
+
+                item['pdfPath'] = os.path.join('/data', str(cache_dir_index), item['pdfPath'])
+                item['videoPath'] = os.path.join('/data', str(cache_dir_index), item['videoPath'])
                 itemToESClient = item.copy()
-                    
+                
                 pdfPath = item['pdfPath']
                 videoPath = item['videoPath']
 

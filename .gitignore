@@ -16,3 +16,5 @@
 /searcher/data/.vscode/
 /searcher/data/3
 /searcher/data/videosstruct*
+/varFile.json
+/privateConfig.json
