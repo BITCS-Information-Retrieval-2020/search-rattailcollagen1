@@ -28,13 +28,13 @@ class DownloadClient:
             msg = int(client_socket.recv(buffsize).decode())
 
             print('maxnum folders from Server: ', msg)
-            maxnum_current = findMaxnum(source)
+            maxnum_current = self.findMaxnum(source)
             print('current maxnum: ', maxnum_current)
             print('There are {} folders need to download...'.format(msg - maxnum_current))
 
             if msg > maxnum_current:
                 for i in range(maxnum_current, msg):
-                    downloadfold(client_socket, i + 1, path)
+                    self.downloadfold(client_socket, i + 1, path)
                     print('Get the {}th folder zip'.format(i + 1))
                     folder_path = path + '\\' + str(i + 1)
                     frzip = zipfile.ZipFile(folder_path + '.zip', 'r', zipfile.ZIP_DEFLATED)
@@ -75,7 +75,7 @@ class DownloadClient:
             while recv_len < filesize_b:
                 percent = recv_len / filesize_b
 
-                process_bar(percent)
+                self.process_bar(percent)
                 if filesize_b - recv_len > buffsize:
 
                     recv_mesg = client_socket.recv(buffsize)
@@ -113,7 +113,6 @@ class DownloadClient:
         # 连接服务器
         client_socket.connect((ip, port))
         # 调用接收函数
-        recv_file_server(client_socket, path)
+        self.recv_file_server(client_socket, path)
         # 关闭套接字
         client_socket.close()
-
