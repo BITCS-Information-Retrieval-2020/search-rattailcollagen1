@@ -16,3 +16,5 @@
 /privateConfig.json
 /searcher/data/PDFs/
 /searcher/data/videos/
+/varFile.json
+/*.bk/
