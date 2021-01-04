@@ -11,10 +11,8 @@
 /audio*
 /tmp*
 /searcher/grobid_client/__pycache__/
-/searcher/data/1/
-/searcher/data/2/
 /searcher/data/.vscode/
-/searcher/data/3
-/searcher/data/videosstruct*
-/varFile.json
+/searcher/data/video*
 /privateConfig.json
+/searcher/data/PDFs/
+/searcher/data/videos/

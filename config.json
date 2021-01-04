@@ -1,6 +1,8 @@
 {
     "mongodb_path": "./searcher/data/MongoDB/papers.json",
-    "video_dir": "./searcher/data/videos",
+    "video_dir": "./searcher/data/cache/1/videos",
     "batch_size": 128,
-    "pdf_dir": "./searcher/data/PDFs" 
+    "pdf_dir": "./searcher/data/cache/1/PDFs",
+    "mongodb_service_name": "crawler",
+    "mongodb_collection_name": "papers"
 }

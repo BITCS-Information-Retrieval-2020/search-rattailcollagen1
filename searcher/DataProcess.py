@@ -10,7 +10,8 @@ from time import sleep
 
 class DataProcess:
     
-    def __init__(self, delete_indices = False, batch_size=200):
+    def __init__(self, config, var_file, mongodb_ip, mongodb_port, 
+        connected=False, delete_indices = False, batch_size=200, local_mongo_drop_flag=True):
         '''Initialize an object of DataProcess
 
             Parameters:
@@ -22,7 +23,25 @@ class DataProcess:
         self.currentPath = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
         self.batchSize = batch_size
         self.sleep_time = 2
-        self.DBer = DatabaseAccess()
+        if connected:
+            """connect mongodb server from remote"""
+            mongodb_service_path = 'mongodb://{0}:{1}'.format(mongodb_ip, mongodb_port)
+            mongodb_service_name = config['mongodb_service_name']
+            mongodb_collection_name = config['mongodb_collection_name']
+            mongodb_increment_beginning_pointer = var_file['mongodb_increment_beginning_pointer']
+            self.DBer = DatabaseAccess(service_path=mongodb_service_path,
+                        service_name=mongodb_service_name,
+                        collection_name=mongodb_collection_name,
+                        increment_beginning_pointer=mongodb_increment_beginning_pointer)
+            print('connect_remote_mongodb: Done!')
+        else:
+            """load mongodb from a json file"""
+            mongodb_path = config['mongodb_path']
+            mongodb_increment_beginning_pointer = var_file['mongodb_increment_beginning_pointer']
+            self.DBer = DatabaseAccess(increment_beginning_pointer=mongodb_increment_beginning_pointer)
+            self.DBer.import_json_db(db_path=mongodb_path, drop_flag=local_mongo_drop_flag)
+            print('load_mongodb: Done!')
+
         self.PDFer = PDFProcessor()
         self.Videoer = VideoProcessor()
         self.ESer = ESClient(delete = delete_indices)
@@ -37,7 +56,10 @@ class DataProcess:
                 3. Aggregate them into a json
                 4. Send the json list into the ESClient
 
+            Return:
+                the end index of mongodb in this reading process
         '''
+        mongodb_increment_next_pointer = -1
         while True:
             """Iteratively fetch data from MongoDB"""
             dataFromDB = self.DBer.read_batch(batch_size = self.batchSize)
@@ -47,32 +69,38 @@ class DataProcess:
             dataToESClient = []
             for item in dataFromDB:
                 """Remove the dot symbol in the path string"""
+                mongodb_increment_next_pointer = max(mongodb_increment_next_pointer, item['_id'])
+
                 if item['pdfPath'] != "" and item['pdfPath'][0] == '.':
                     del item['pdfPath'][0]
-                if item['pdfPath'][0:5] == "/data":
-                    item['pdfPath'] = item['pdfPath'][5:]
+                if item['pdfPath'][0:6] == "/data/":
+                    item['pdfPath'] = item['pdfPath'][6:]
                 if item['videoPath'] != "" and item['videoPath'][0] == '.':
                     del item['videoPath'][0]
-                if item['videoPath'][0:5] == "/data":
-                    item['videoPath'] = item['videoPath'][5:]
+                if item['videoPath'][0:6] == "/data/":
+                    item['videoPath'] = item['videoPath'][6:]
 
-                item['pdfPath'] = os.path.join('/data', str(cache_dir_index), item['pdfPath'])
-                item['videoPath'] = os.path.join('/data', str(cache_dir_index), item['videoPath'])
+                if item['pdfPath'] != "":
+                    item['pdfPath'] = '/'.join(os.path.join('/data/cache', str(cache_dir_index), item['pdfPath']).split('\\'))
+                if item['videoPath'] != "":
+                    item['videoPath'] = '/'.join(os.path.join('/data/cache', str(cache_dir_index), item['videoPath']).split('\\'))
                 itemToESClient = item.copy()
                 
                 pdfPath = item['pdfPath']
+                pdf_path = '/'.join(os.path.join(self.currentPath, pdfPath[1:]).split('\\'))
                 videoPath = item['videoPath']
-
+                video_path = '/'.join(os.path.join(self.currentPath, videoPath[1:]).split('\\'))
+                
                 """Convert the corresponding pdf file and video file to the specific forms"""
                 if pdfPath != "":
                     pdfText = self.PDFer.convert(server=pdf_ip, port=pdf_port, \
-                    pdf_path=self.currentPath + pdfPath)
+                        pdf_path=pdf_path)
                     itemToESClient['pdfText'] = pdfText
                 else:
                     itemToESClient['pdfText'] = ""
 
                 if videoPath != "":
-                    videoStruct = []#self.Videoer.convert(self.currentPath + videoPath)
+                    videoStruct = []#self.Videoer.convert(self.video_path)
                     itemToESClient['videoStruct'] = videoStruct
                 else:
                     itemToESClient['videoStruct'] = []
@@ -87,6 +115,8 @@ class DataProcess:
             """Check if the cursor is in the end of the MongoDB"""
             if len(dataToESClient) < self.batchSize:
                 break
+        
+        return mongodb_increment_next_pointer
         
 if __name__ == '__main__':
     """This script is to read data from MongoDB, process PDFs as well as videos, and insert
