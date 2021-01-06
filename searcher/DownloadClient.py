@@ -1,118 +1,102 @@
 import socket
 import os
-import re
-import time
-import struct
-import json
 import sys
+import struct
+import requests
+import json
 import zipfile
+from time import sleep
+import threading
 
-source = './data'
-buffsize = 1024
 
 class DownloadClient:
-    """
-    本类为文件下载的客户端，供SearchEngine类调用
-    """
-    def __init__(self):
-        pass
+    def __init__(self, ip, port):
+        self.ip = ip
+        self.port = port
+        self.data_path = os.path.dirname(os.path.abspath(__file__)) + '/data/cache'
+        print(self.data_path)
+        self.compressed_path = self.data_path + '/to_send.zip'
+        print(self.data_path)
+        if not os.path.exists(self.data_path):
+            os.mkdir(self.data_path)
 
-    def recv_file_server(self, client_socket, path):
-        """
-        向服务端请求最大文件夹数
-        并请求自己还缺少的文件夹
-        """
+    def find_max(self):
+        dir_itr = iter(os.walk(self.data_path))
+        _, dir_list, _ = dir_itr.__next__()
+        if dir_list:
+            sub_dir = dir_list[-1]
+        else:
+            sub_dir = 0
+        print("client max dir:{}".format(sub_dir))
+        return int(sub_dir)
+
+    def send(self, ip, port):
         while True:
-            sendStr = 'Give the maxnum of the folders to me!'
-            client_socket.send(sendStr.encode())
-            msg = int(client_socket.recv(buffsize).decode())
-
-            print('maxnum folders from Server: ', msg)
-            maxnum_current = self.findMaxnum(source)
-            print('current maxnum: ', maxnum_current)
-            print('There are {} folders need to download...'.format(msg - maxnum_current))
-
-            if msg > maxnum_current:
-                for i in range(maxnum_current, msg):
-                    self.downloadfold(client_socket, i + 1, path)
-                    print('Get the {}th folder zip'.format(i + 1))
-                    folder_path = path + '\\' + str(i + 1)
-                    frzip = zipfile.ZipFile(folder_path + '.zip', 'r', zipfile.ZIP_DEFLATED)
-                    # 将所有文件加压缩到指定目录
-                    frzip.extractall(folder_path)
-                    frzip.close()
-                    os.remove(folder_path + '.zip')
+            url = 'http://{}:{}/download'.format(ip, port)
+            pc_name = socket.getfqdn(socket.gethostname())
+            pc_ip = socket.gethostbyname(pc_name)
+            max_dir = self.find_max()
+            params = {"max_dir": max_dir,
+                      "ip": pc_ip,
+                      "port": self.port}
+            res = requests.get(url, params=params)
+            res = json.loads(res.text)
+            send_flag = int(res['send_flag'])
+            if send_flag:
+                self.receive()
             else:
-                print('No folder needs to be downloaded........')
-            time.sleep(5)
+                print("no file to receive")
+                pass
+            sleep(43200)
 
-    def process_bar(self, precent, width=50):
-        use_num = int(precent * width)
-        space_num = int(width - use_num)
-        precent = precent * 100
-        #   第一个和最后一个一样梯形显示, 中间两个正确,但是在python2中报错
-        #
-        # print('[%s%s]%d%%'%(use_num*'#', space_num*' ',precent))
-        # print('[%s%s]%d%%'%(use_num*'#', space_num*' ',precent), end='\r')
-        print('[%s%s]%d%%' % (use_num * '#', space_num * ' ', precent), file=sys.stdout, flush=True, end='\r')
-        # print('[%s%s]%d%%'%(use_num*'#', space_num*' ',precent),file=sys.stdout,flush=True)
+    def receive(self):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind((self.ip, self.port))
+            s.listen(10)
+        except socket.error as e:
+            print(e)
+            sys.exit(1)
 
-    def downloadfold(self, client_socket, folder_th, path):
-        client_socket.send(str(folder_th).encode())
+        print("waiting for receiving...")
+        conn, addr = s.accept()
+        while True:
+            fileinfo_size = struct.calcsize('128sl')
+            buf = conn.recv(fileinfo_size)
+            if buf:
+                file_name, file_size = struct.unpack('128sl', buf)
+                file_name = file_name.strip(b'\00')
+                file_name = file_name.decode()
+                print('file name is {}, file size is {}'.format(file_name, file_size))
 
-        # 服务端信息接收器：甲
-        head_struct = client_socket.recv(4)  # 接收报头的长度,
-        head_len = struct.unpack('i', head_struct)[0]  # 解析出报头的字符串大小
-        data = client_socket.recv(head_len)  # 接收长度为head_len的报头内容的信息 (包含文件大小,文件名的内容)
+                received_size = 0
+                out_file = open(self.compressed_path, 'wb')
+                print('start receiving')
 
-        head_dir = json.loads(data.decode('utf-8'))
-        filesize_b = head_dir['filesize_bytes']
+                while received_size != file_size:
+                    if file_size - received_size > 1024:
+                        data = conn.recv(1024)
+                        received_size += len(data)
+                    else:
+                        data = conn.recv(file_size-received_size)
+                        received_size = file_size
+                    out_file.write(data)
+                out_file.close()
+                print('receiving end')
+            conn.close()
+            break
+        s.close()
+        z = zipfile.ZipFile(self.compressed_path, 'r')
+        z.extractall(self.data_path)
+        z.close()
+        os.remove(self.compressed_path)
 
-        #   接受真的文件内容
-        recv_len = 0
-        old = time.time()
-        with open(path + '\\' + str(folder_th) + '.zip', 'wb') as f:
-            while recv_len < filesize_b:
-                percent = recv_len / filesize_b
 
-                self.process_bar(percent)
-                if filesize_b - recv_len > buffsize:
+if __name__ == "__main__":
+    client = DownloadClient('127.0.0.1', 9001)
+    t = threading.Thread(target=client.send, args=('127.0.0.1', 5000))
+    t.setDaemon(True)
+    t.start()
+    sleep(20)
 
-                    recv_mesg = client_socket.recv(buffsize)
-                    f.write(recv_mesg)
-                    recv_len += len(recv_mesg)
-                else:
-                    recv_mesg = client_socket.recv(filesize_b - recv_len)
-                    recv_len += len(recv_mesg)
-                    f.write(recv_mesg)
-
-            now = time.time()
-            stamp = int(now - old)
-            print('Download {}th folder, use %ds'.format(folder_th, stamp))
-
-    def findMaxnum(self, path):
-        """
-        找到Client 路径下文件夹个数
-        :param path: Client 查找路径
-        :return:
-        """
-        count = 0
-        for _ in os.listdir(path):
-            count += 1
-        return count
-
-    def download(self, ip, port, path=""):
-        """
-        向数据库服务器请求数据，获得的是一个压缩文件，然后解压到path下。
-        :param ip: 数据库服务器ip
-        :param port: 数据库服务器端口
-        :param path: 下载后的存储路径，目前计划是包内的一个固定路径，因此以默认参数形式存在，不允许修改
-        :return: 下载是否成功，使用布尔值表示
-        """
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # 连接服务器
-        client_socket.connect((ip, port))
-        # 调用接收函数
-        self.recv_file_server(client_socket, path)
-        # 关闭套接字
-        client_socket.close()

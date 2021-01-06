@@ -1,117 +1,94 @@
-import os
+import threading
 import socket
-import json
 import struct
+import sys
+import os
 import zipfile
+from flask import Flask
+from flask import request
+from time import sleep
 
-RECVSIZE = 1024
-path = './data'
+MAX_LENGTH = 1024
+
 
 class DownloadServer:
-    """
-    本类为下载数据的服务器端，接收客户端发来的请求并返回相应的数据
-    """
-    def __init__(self, port):
-        """
-        :param port: 监听请求的端口
-        """
-        self.s_port = port
+    def __init__(self):
+        self.data_path = os.path.dirname(os.path.abspath(__file__)) + '/data/cache'
+        self.compressed_path = self.data_path + '/to_send.zip'
 
-    
-    def zip_ya(self, startdir):
-        file_news = startdir + '.zip'  # 压缩后文件夹的名字
-        z = zipfile.ZipFile(file_news, 'w', zipfile.ZIP_DEFLATED)  # 参数一：文件夹名
-        for dirpath, dirnames, filenames in os.walk(startdir):
-            fpath = dirpath.replace(startdir, '')  # 这一句很重要，不replace的话，就从根目录开始复制
-            fpath = fpath and fpath + os.sep or ''  # 这句话理解我也点郁闷，实现当前文件夹以及包含的所有文件的压缩
-            for filename in filenames:
-                z.write(os.path.join(dirpath, filename), fpath + filename)
-        print('压缩成功')
+    def find_max(self):
+        dir_itr = iter(os.walk(self.data_path))
+        _, dir_list, _ = dir_itr.__next__()
+        if dir_list:
+            sub_dir = dir_list[-1]
+        else:
+            sub_dir = 0
+        print("server max dir:{}".format(sub_dir))
+        return int(sub_dir)
+
+    def judge(self, client_max_dir):
+        server_max_dir = self.find_max()
+        if client_max_dir < server_max_dir:
+            return 1, server_max_dir
+        return 0, server_max_dir
+
+    def compress(self, client_max_dir, server_max_dir):
+        z = zipfile.ZipFile(self.compressed_path, 'w')
+        for i in range(client_max_dir+1, server_max_dir+1):
+            sub_path = self.data_path+'/'+str(i)
+            z.write(sub_path, str(i))
+            for path, sub_dir, files in os.walk(sub_path):
+                relative_path = path.replace(sub_path, str(i))
+                for cur_file in files:
+                    z.write(path + '/' + cur_file, relative_path + '/' + cur_file)
         z.close()
 
-    
-
-    def findMaxnum(self, path):
-        """
-        找到Server 路径下文件夹个数
-        :param path:
-        :return:
-        """
-        count = 0
-        for _ in os.listdir(path):
-            count += 1
-        return count
-
-    def send_file_client(self, dir_socket):
-        """
-        向客户端发送字节流
-        :param dir_socket:
-        :return:
-        """
-        send_str = dir_socket.recv(RECVSIZE).decode()
-        if send_str.startswith('Give'):
-            maxnum = self.findMaxnum(path)
-            dir_socket.send(str(maxnum).encode())
-        else:
-            print('Transport the {}th folder'.format(str(send_str)))
-            dir_name = path + str(send_str)
-            self.zip_ya(dir_name)
-            self.transport_zip(dir_socket, dir_name + '.zip')
-
-    def transport_zip(self, dir_socket, filepath):
-        """
-        传输ZIP压缩文件
-        :param dir_socket:
-        :param filepath:
-        :return:
-        """
-        filesize_bytes = os.path.getsize(filepath)  # 得到文件的大小,字节
-        dirc = {
-            'filename': filepath,
-            'filesize_bytes': filesize_bytes,
-        }
-        head_info = json.dumps(dirc)  # 将字典转换成字符串
-        head_info_len = struct.pack('i', len(head_info))  # 将字符串的长度打包
-        #   先将报头转换成字符串(json.dumps), 再将字符串的长度打包
-        #   发送报头长度,发送报头内容,最后放真是内容
-        #   报头内容包括文件名,文件信息,报头
-        #   接收时:先接收4个字节的报头长度,
-        #   将报头长度解压,得到头部信息的大小,在接收头部信息, 反序列化(json.loads)
-        #   最后接收真实文件
-        dir_socket.send(head_info_len)  # 发送head_info的长度
-        dir_socket.send(head_info.encode('utf-8'))
-
-        #   发送真是信息
-        with open(filepath, 'rb') as f:
-            data = f.read()
-            dir_socket.sendall(data)
-
-        os.remove(filepath)
-
-        print('发送成功')
-
-    def listen(self):
-        """
-        监听客户端发来的请求并返回文件
-        :return:
-        """
-        # 建立
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-        # 绑定
-        server.bind(('127.0.0.1', self.s_port))
-
-        # 通信循环
-        server_socket.listen(128)
-
+    def send(self, client_max_dir, server_max_dir, client_ip, client_port):
+        self.compress(client_max_dir, server_max_dir)
+        sleep(1)
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        except socket.error as e:
+            print(e)
+            sys.exit(1)
+        s.connect((client_ip, client_port))
+        fileinfo_size = struct.calcsize('128sl')
+        file_head = struct.pack('128sl',
+                                os.path.basename(self.compressed_path).encode('utf-8'),
+                                os.stat(self.compressed_path).st_size)
+        s.send(file_head)
+        fp = open(self.compressed_path, 'rb')
         while True:
-            print('Waiting for a new connection........')
-            # 生成一个面向请求客户端的套接字
-            dir_socket, client_ip = server_socket.accept()
-            # 调用发送数据函数
-            while True:
-                self.send_file_client(dir_socket)
-            # 关闭套接字
-            dir_socket.close()
-        server_socket.close()
+            data = fp.read(MAX_LENGTH)
+            if not data:
+                print("send over")
+                break
+            else:
+                print("send")
+                s.send(data)
+        s.close()
+        fp.close()
+        os.remove(self.compressed_path)
+
+
+app = Flask(__name__)
+server = DownloadServer()
+
+
+@app.route('/download', methods=['GET'])
+def download():
+    client_max_dir = int(request.args.get("max_dir"))
+    target_ip = request.args.get("ip")
+    target_port = int(request.args.get("port"))
+    send_flag, server_max_dir = server.judge(client_max_dir)
+    if send_flag:
+        t = threading.Thread(target=server.send, args=(client_max_dir, server_max_dir, target_ip, target_port))
+        t.start()
+        print("thread start")
+        return '{"send_flag":1}'
+    else:
+        return '{"send_flag":0}'
+
+
+if __name__ == "__main__":
+    app.run()
