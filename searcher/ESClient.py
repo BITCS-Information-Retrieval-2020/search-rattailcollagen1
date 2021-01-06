@@ -3,8 +3,8 @@ import ipdb, random, time, json, pprint, logging
 
 class ESClient:
 
-    def __init__(self, auth=('elastic', 'elastic123'), index_name='papers', delete=False):
-        self.es = Elasticsearch(http_auth=auth)
+    def __init__(self, ip_port, auth=('elastic', 'elastic123'), index_name='papers', delete=False):
+        self.es = Elasticsearch(ip_port, http_auth=auth)
         self.index_name = index_name
         self.mapping = {
             'properties': {
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     with open('/home/lt/data/papers.json', 'rb') as f:
         test_data = json.load(f)
     
-    esclient = ESClient(delete=True)
+    esclient = ESClient('10.1.114.121:9200', delete=True)
     # create index
     esclient.update_index(test_data, len(test_data))
     time.sleep(2)
