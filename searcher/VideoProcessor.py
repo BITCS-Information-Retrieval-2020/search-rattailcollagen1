@@ -92,6 +92,7 @@ def stt(audio_address):
     aipSpeech = AipSpeech(APP_ID, API_KEY, SECRET_KEY)
 
     audio = get_file_content(audio_address)
+    os.remove('audio_tmp.wav')
     jsonn = aipSpeech.asr(audio, 'wav', 16000, {
             'dev_pid': lang,
     })
@@ -123,18 +124,12 @@ class VideoProcessor:
         #创建json文件夹
         parent_path = os.path.abspath(os.path.join(videos_path, '..'))
         struct_path = os.path.join(parent_path, 'videosstruct')
-        if os.path.exists(struct_path) is False:
+        if os.path.exists(struct_path) == -1:
             os.makedirs(struct_path)
-            # files = os.listdir(struct_path)
-            # for file in files:
-                # os.remove(os.path.join(struct_path, file))
-            # os.removedirs(struct_path)
-        # os.makedirs(struct_path)
-        
+
         video_files = os.listdir(videos_path)
         for video_file in video_files:
-            #json_path = os.path.join(struct_path, video_file.split('.')[-1]+'.json')
-            json_path = os.path.join(struct_path, '.'.join(video_file.split('.')[:-1])+'.json')
+            json_path = os.path.join(struct_path, video_file.split('.')[0]+'.json')
             if operator.eq(video_file.split('.')[-1],'mp4') is False:
                 continue
             if force_process is False and os.path.exists(json_path):
@@ -158,14 +153,14 @@ class VideoProcessor:
                 os.remove("splits/" + each)
                 if sentence is None:
                     continue
-                tmp = {'timeStart': start, 'timeEnd': end,  'sentence': sentence[0]}
+                tmp = {'timeStart': start, 'timeEnd': end,  'sentence': sentence}
                 text_list.append(tmp)
             os.remove("tmp.wav")
             os.removedirs("splits")
             #将list存进json文件中
             with open(json_path,'w') as file_obj:
                 json.dump(text_list, file_obj)
-            
+
 
     def convert(self, video_path):
         '''
@@ -194,7 +189,7 @@ class VideoProcessor:
             with open(json_path) as fp:
                 json_data = json.load(fp)
                 return json_data
-                
+
         videoToSpeech(video_path, target="tmp.wav")
         if os.path.exists('splits'):
             files = os.listdir('splits')
