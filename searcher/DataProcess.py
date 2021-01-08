@@ -10,8 +10,10 @@ from time import sleep
 
 class DataProcess:
     
-    def __init__(self, config, var_file, mongodb_ip, mongodb_port, 
-        connected=False, delete_indices = False, batch_size=200, local_mongo_drop_flag=True):
+    def __init__(self, config, var_file, mongodb_ip, mongodb_port, es_ip, es_port,
+        connected=False, delete_indices = False, batch_size=200, local_mongo_drop_flag=True,
+        import_json_db=False
+        ):
         '''Initialize an object of DataProcess
 
             Parameters:
@@ -39,12 +41,13 @@ class DataProcess:
             mongodb_path = config['mongodb_path']
             mongodb_increment_beginning_pointer = var_file['mongodb_increment_beginning_pointer']
             self.DBer = DatabaseAccess(increment_beginning_pointer=mongodb_increment_beginning_pointer)
-            self.DBer.import_json_db(db_path=mongodb_path, drop_flag=local_mongo_drop_flag)
-            print('load_mongodb: Done!')
+            if import_json_db:
+                self.DBer.import_json_db(db_path=mongodb_path, drop_flag=local_mongo_drop_flag)
+                print('load_mongodb: Done!')
 
         self.PDFer = PDFProcessor()
         self.Videoer = VideoProcessor()
-        self.ESer = ESClient(delete = delete_indices)
+        self.ESer = ESClient(ip_port='{0}:{1}'.format(es_ip, es_port), delete = delete_indices)
         print('Current path: ', self.currentPath)
 
     def process(self, pdf_ip, pdf_port, cache_dir_index=1):

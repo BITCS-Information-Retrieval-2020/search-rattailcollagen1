@@ -54,8 +54,9 @@ def process_video(config):
     Videoer.video2text(videos_path=video_dir)
 
 def build_indices(config, var_file_path, var_file, mongodb_ip, \
-                    mongodb_port, pdf_ip, pdf_port, force_delete=False, 
-                    connected=False, local_mongo_drop_flag=True):
+                    mongodb_port, pdf_ip, pdf_port, es_ip, es_port,
+                    force_delete=False, connected=False, local_mongo_drop_flag=True
+                    ):
     """build ES indices using the current mongodb database"""
     batch_size = config['batch_size']
     cache_dir_index = var_file['cache_dir_index']
@@ -66,7 +67,9 @@ def build_indices(config, var_file_path, var_file, mongodb_ip, \
                         var_file=var_file, 
                         mongodb_ip=mongodb_ip, 
                         mongodb_port=mongodb_port,
-                        local_mongo_drop_flag=local_mongo_drop_flag)
+                        local_mongo_drop_flag=local_mongo_drop_flag,
+                        es_ip=es_ip,
+                        es_port=es_port)
 
     mongodb_increment_next_pointer = \
         Dper.process(pdf_ip=pdf_ip, pdf_port=pdf_port, cache_dir_index=cache_dir_index)
@@ -97,10 +100,10 @@ def update_cache_dir_index(var_file_path, var_file):
 
 def test_query(config):
     """check if the elasticsearch can work independently"""
-    esclient = ESClient(delete=False)
+    esclient = ESClient(ip_port='127.0.0.1:9200', delete=False)
     query = {
         "type": 1,
-        "top_number": 10,
+        "top_number": 8192,
         "query_text": {
             "title": "[Oral at NeurIPS 2020] DVERGE: Diversifying Vulnerabilities for Enhanced Robust Generation of Ensembles",
             "authors": "",
@@ -119,9 +122,11 @@ if __name__ == '__main__':
         1. python main.py --mode process_pdf --pdf_ip PDF_IP --pdf_port PDF_PORT
         2. python main.py --mode process_video
         3. python main.py --mode build_indices_remote --mongodb_ip MONGODB_IP --mongodb_port MONGODB_PORT \
-        --pdf_ip PDF_IP --pdf_port PDF_PORT --delete_indices 0
-        3_demo. python main.py --mode build_indices_local --pdf_ip PDF_IP --pdf_port PDF_PORT \
-        --delete_indices 1
+        --pdf_ip PDF_IP --pdf_port PDF_PORT --es_ip ES_IP --es_port ES_PORT --delete_indices 0
+        3_demo(first). python main.py --mode build_indices_local --pdf_ip PDF_IP --pdf_port PDF_PORT \
+        --es_ip ES_IP --es_port ES_PORT --delete_indices 1 --local_mongo_drop_flag 1
+        3_demo(next). python main.py --mode build_indices_local --pdf_ip PDF_IP --pdf_port PDF_PORT \
+        --es_ip ES_IP --es_port ES_PORT --delete_indices 0 --local_mongo_drop_flag 0
         4. python main.py --mode update_cache_dir_index
         5_test. python main.py --mode test_query
     """
@@ -135,6 +140,8 @@ if __name__ == '__main__':
     parser.add_argument("--mongodb_port", type=str, default='27017', help='port of mongodb server')
     parser.add_argument("--delete_indices", type=int, default=0, help='whether to delete es indices')
     parser.add_argument("--local_mongo_drop_flag", type=int, default=1, help='drop local mongodb or not')
+    parser.add_argument("--es_ip", type=str, default='127.0.0.1', help='ip of es server')
+    parser.add_argument("--es_port", type=str, default='9200', help='ip of es port')
     args = parser.parse_args()
 
     with open(args.config, 'r', encoding='utf-8') as config_json:
@@ -142,15 +149,6 @@ if __name__ == '__main__':
     with open(args.var_file, 'r', encoding='utf-8') as var_file_json:
         var_file = json.load(var_file_json)
 
-    '''
-    if args.mode == 'load_mongodb':
-        load_mongodb(config=config)
-    elif args.mode == 'connect_remote_mongodb':
-        connect_remote_mongodb(config=config, 
-            var_file=var_file, 
-            mongodb_ip=args.mongodb_ip, 
-            mongodb_port=args.mongodb_port)
-    '''
     if args.mode == 'init_var_file':
         init_var_file(var_file_path=args.var_file, var_file=var_file)
     elif args.mode == 'process_pdf':
@@ -167,7 +165,9 @@ if __name__ == '__main__':
             pdf_port=args.pdf_port, 
             force_delete=bool(args.delete_indices), 
             connected=False,
-            local_mongo_drop_flag=bool(args.local_mongo_drop_flag))
+            local_mongo_drop_flag=bool(args.local_mongo_drop_flag),
+            es_ip=args.es_ip,
+            es_port=args.es_port)
     elif args.mode == 'build_indices_remote':
         build_indices(config=config, 
             var_file_path=args.var_file, 
@@ -177,7 +177,10 @@ if __name__ == '__main__':
             pdf_ip=args.pdf_ip, 
             pdf_port=args.pdf_port, 
             force_delete=bool(args.delete_indices), 
-            connected=True)
+            connected=True,
+            local_mongo_drop_flag=False,
+            es_ip=args.es_ip,
+            es_port=args.es_port)
     elif args.mode == 'update_cache_dir_index':
         update_cache_dir_index(var_file_path=args.var_file,
                                 var_file=var_file)

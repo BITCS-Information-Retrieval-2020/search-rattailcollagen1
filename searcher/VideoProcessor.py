@@ -34,21 +34,18 @@ def split_on_silence(audio_seg, min_silence_len, thresh, keep_sil):
 def speech_split(speech_file, save_dir):
     '''
     音频分割，并得到其时间轴位置
-
     参数
     ----------
     speech_file : str
         音频文件地址
     save_dir : str
         保存文件地址
-
     返回值
     -------
     chunkss
         分割音频文件地址
     chunk_lens
         音频起止时间
-
     '''
     sound = AudioSegment.from_mp3(speech_file)
     chunks, startt, endt = split_on_silence(sound, min_silence_len=350,
@@ -124,12 +121,13 @@ class VideoProcessor:
         #创建json文件夹
         parent_path = os.path.abspath(os.path.join(videos_path, '..'))
         struct_path = os.path.join(parent_path, 'videosstruct')
-        if os.path.exists(struct_path) == -1:
+        if os.path.exists(struct_path) is False:
             os.makedirs(struct_path)
-
+        
         video_files = os.listdir(videos_path)
         for video_file in video_files:
-            json_path = os.path.join(struct_path, video_file.split('.')[0]+'.json')
+            #json_path = os.path.join(struct_path, video_file.split('.')[-1]+'.json')
+            json_path = os.path.join(struct_path, '.'.join(video_file.split('.')[:-1])+'.json')
             if operator.eq(video_file.split('.')[-1],'mp4') is False:
                 continue
             if force_process is False and os.path.exists(json_path):
@@ -153,21 +151,20 @@ class VideoProcessor:
                 os.remove("splits/" + each)
                 if sentence is None:
                     continue
-                tmp = {'timeStart': start, 'timeEnd': end,  'sentence': sentence}
+                tmp = {'timeStart': start, 'timeEnd': end,  'sentence': sentence[0]}
                 text_list.append(tmp)
             os.remove("tmp.wav")
             os.removedirs("splits")
             #将list存进json文件中
             with open(json_path,'w') as file_obj:
                 json.dump(text_list, file_obj)
-
+            
 
     def convert(self, video_path):
         '''
             将一个video转换为一系列的文本
             （以句为单位）以及出现该文本的
             开始时间与结束时间
-
             Parameters:
                 video_path: absolute path to a video file
             Return: 一个list，其中每一个元素是一个dict，该dict的格式为 (下面这个仅是一个例子)：
@@ -189,7 +186,7 @@ class VideoProcessor:
             with open(json_path) as fp:
                 json_data = json.load(fp)
                 return json_data
-
+                
         videoToSpeech(video_path, target="tmp.wav")
         if os.path.exists('splits'):
             files = os.listdir('splits')
