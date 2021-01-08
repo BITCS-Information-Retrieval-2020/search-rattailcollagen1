@@ -37,20 +37,21 @@ def init_var_file(var_file_path, var_file):
     """initialize the values in varFile.json"""
     var_file['mongodb_increment_beginning_pointer'] = -1
     var_file['cache_dir_index'] = 1
+    var_file['crawler_cache_dir_index'] = 0
     var_file['mongodb_increment_next_pointer'] = -1
     with open(var_file_path, 'w', encoding='utf-8') as f:
         json.dump(var_file, f)
 
-def process_pdf(config, pdf_ip, pdf_port):
+def process_pdf(pdf_dir, pdf_ip, pdf_port):
     """process pdfs in the pdf_dir"""
     PDFer = PDFProcessor()
-    pdf_dir = config['pdf_dir']
+    #pdf_dir = config['pdf_dir']
     PDFer.PDFtoXML(server=pdf_ip, port=pdf_port, pdf_dir=pdf_dir)
 
-def process_video(config):
+def process_video(video_dir):
     """process videos in the video_dir"""
     Videoer = VideoProcessor()
-    video_dir = config['video_dir']
+    # video_dir = config['video_dir']
     Videoer.video2text(videos_path=video_dir)
 
 def build_indices(config, var_file_path, var_file, mongodb_ip, \
@@ -119,8 +120,8 @@ def test_query(config):
 if __name__ == '__main__':
     """Usage:
         0. python main.py --mode init_var_file
-        1. python main.py --mode process_pdf --pdf_ip PDF_IP --pdf_port PDF_PORT
-        2. python main.py --mode process_video
+        1. python main.py --mode process_pdf --pdf_ip PDF_IP --pdf_port PDF_PORT --pdf_dir PDF_DIR
+        2. python main.py --mode process_video --video_dir VIDEO_DIR
         3. python main.py --mode build_indices_remote --mongodb_ip MONGODB_IP --mongodb_port MONGODB_PORT \
         --pdf_ip PDF_IP --pdf_port PDF_PORT --es_ip ES_IP --es_port ES_PORT --delete_indices 0
         3_demo(first). python main.py --mode build_indices_local --pdf_ip PDF_IP --pdf_port PDF_PORT \
@@ -136,12 +137,14 @@ if __name__ == '__main__':
     parser.add_argument("--var_file", type=str, default='./varFile.json', help='store variables')
     parser.add_argument("--pdf_ip", type=str, default='localhost', help='ip of grobid server')
     parser.add_argument("--pdf_port", type=str, default='8070', help='port of grobid server')
+    parser.add_argument("--pdf_dir", type=str, default='./searcher/data/cache/1/PDFs', help='path to the directory /PDFs')
     parser.add_argument("--mongodb_ip", type=str, default='127.0.0.1', help='ip of mongodb server')
     parser.add_argument("--mongodb_port", type=str, default='27017', help='port of mongodb server')
     parser.add_argument("--delete_indices", type=int, default=0, help='whether to delete es indices')
     parser.add_argument("--local_mongo_drop_flag", type=int, default=1, help='drop local mongodb or not')
     parser.add_argument("--es_ip", type=str, default='127.0.0.1', help='ip of es server')
     parser.add_argument("--es_port", type=str, default='9200', help='ip of es port')
+    parser.add_argument("--video_dir", type=str, default='./searcher/data/cache/1/videos', help='path of the director of /videos')
     args = parser.parse_args()
 
     with open(args.config, 'r', encoding='utf-8') as config_json:
@@ -152,9 +155,9 @@ if __name__ == '__main__':
     if args.mode == 'init_var_file':
         init_var_file(var_file_path=args.var_file, var_file=var_file)
     elif args.mode == 'process_pdf':
-        process_pdf(config=config, pdf_ip=args.pdf_ip, pdf_port=args.pdf_port)
+        process_pdf(pdf_dir=args.pdf_dir, pdf_ip=args.pdf_ip, pdf_port=args.pdf_port)
     elif args.mode == 'process_video':
-        process_video(config=config)
+        process_video(video_dir=args.video_dir)
     elif args.mode == 'build_indices_local':
         build_indices(config=config, 
             var_file_path=args.var_file, 

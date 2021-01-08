@@ -11,8 +11,7 @@ from time import sleep
 class DataProcess:
     
     def __init__(self, config, var_file, mongodb_ip, mongodb_port, es_ip, es_port,
-        connected=False, delete_indices = False, batch_size=200, local_mongo_drop_flag=True,
-        import_json_db=False
+        connected=False, delete_indices = False, batch_size=200, local_mongo_drop_flag=True
         ):
         '''Initialize an object of DataProcess
 
@@ -41,9 +40,8 @@ class DataProcess:
             mongodb_path = config['mongodb_path']
             mongodb_increment_beginning_pointer = var_file['mongodb_increment_beginning_pointer']
             self.DBer = DatabaseAccess(increment_beginning_pointer=mongodb_increment_beginning_pointer)
-            if import_json_db:
-                self.DBer.import_json_db(db_path=mongodb_path, drop_flag=local_mongo_drop_flag)
-                print('load_mongodb: Done!')
+            self.DBer.import_json_db(db_path=mongodb_path, drop_flag=local_mongo_drop_flag)
+            print('load_mongodb: Done!')
 
         self.PDFer = PDFProcessor()
         self.Videoer = VideoProcessor()
@@ -73,7 +71,7 @@ class DataProcess:
             for item in dataFromDB:
                 """Remove the dot symbol in the path string"""
                 mongodb_increment_next_pointer = max(mongodb_increment_next_pointer, item['_id'])
-
+                # print('_id: ', str(item['_id']))
                 if item['pdfPath'] != "" and item['pdfPath'][0] == '.':
                     del item['pdfPath'][0]
                 if item['pdfPath'][0:6] == "/data/":
