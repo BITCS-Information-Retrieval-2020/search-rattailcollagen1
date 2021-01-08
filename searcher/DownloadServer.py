@@ -90,5 +90,9 @@ def download():
         return '{"send_flag":0}'
 
 
+@app.route('/test', methods=['GET'])
+def test():
+    return "test"
+
 if __name__ == "__main__":
     app.run()
