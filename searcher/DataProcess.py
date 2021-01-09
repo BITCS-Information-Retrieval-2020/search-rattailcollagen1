@@ -101,7 +101,7 @@ class DataProcess:
                     itemToESClient['pdfText'] = ""
 
                 if videoPath != "":
-                    videoStruct = self.Videoer.convert(self.video_path)
+                    videoStruct = self.Videoer.convert(video_path=video_path)
                     itemToESClient['videoStruct'] = videoStruct
                 else:
                     itemToESClient['videoStruct'] = []

@@ -64,7 +64,6 @@ if __name__ == '__main__':
                     --es_port ES_PORT --sleep_time SLEEP_TIME
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--init_all", type=int, default=0)
     parser.add_argument("--mode", type=str, default='demo')
     parser.add_argument("--pdf_ip", type=str, default='localhost', help='ip of grobid server')
     parser.add_argument("--pdf_port", type=str, default='8070', help='port of grobid server')
