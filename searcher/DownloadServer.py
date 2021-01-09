@@ -19,8 +19,9 @@ class DownloadServer:
     def find_max(self):
         dir_itr = iter(os.walk(self.data_path))
         _, dir_list, _ = dir_itr.__next__()
+        dir_list = list(map(int, dir_list))
         if dir_list:
-            sub_dir = dir_list[-1]
+            sub_dir = max(dir_list)
         else:
             sub_dir = 0
         print("server max dir:{}".format(sub_dir))
