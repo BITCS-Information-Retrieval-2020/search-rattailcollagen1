@@ -46,7 +46,6 @@ class DownloadServer:
 
     def send(self, client_max_dir, server_max_dir, client_ip, client_port):
         self.compress(client_max_dir, server_max_dir)
-        sleep(1)
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         except socket.error as e:
@@ -65,7 +64,6 @@ class DownloadServer:
                 print("send over")
                 break
             else:
-                print("send")
                 s.send(data)
         s.close()
         fp.close()
@@ -79,7 +77,7 @@ server = DownloadServer()
 @app.route('/download', methods=['GET'])
 def download():
     client_max_dir = int(request.args.get("max_dir"))
-    target_ip = request.args.get("ip")
+    target_ip = request.remote_addr
     target_port = int(request.args.get("port"))
     send_flag, server_max_dir = server.judge(client_max_dir)
     if send_flag:
