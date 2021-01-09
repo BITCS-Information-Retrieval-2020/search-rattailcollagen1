@@ -89,7 +89,7 @@ def download():
         return '{"send_flag":0}'
 
 
-@app.route('/test', methods=['GET'])
+@app.route('/test')
 def test():
     return "test"
 
