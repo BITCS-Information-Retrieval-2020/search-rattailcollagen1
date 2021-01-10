@@ -1,6 +1,7 @@
 from .DownloadClient import DownloadClient
 from .ESClient import ESClient
 import threading
+import os
 
 
 class SearchEngine:
@@ -31,4 +32,8 @@ class SearchEngine:
         :return: 结果列表
         """
         res = self.es.search(query)
+        abs_dirname = os.path.dirname(os.path.abspath(__file__))
+        for item in res:
+            item["pdfPath"] = abs_dirname + item["pdfPath"]
+            item["videoPath"] = abs_dirname + item["videoPath"]
         return res
