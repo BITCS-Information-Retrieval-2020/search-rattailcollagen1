@@ -158,7 +158,7 @@ class ESClient:
         dsl = {
             'query': {
                 'match': {
-                    'sentence': query_text
+                    'videoStruct.sentence': query_text
                 }
             }
         }
@@ -173,41 +173,48 @@ class ESClient:
         
 if __name__ == "__main__":
     # test data
-    with open('/home/lt/data/papers.json', 'rb') as f:
+    with open('papers.json', 'rb') as f:
         test_data = json.load(f)
-    
     esclient = ESClient('10.1.114.121:9200', delete=True)
+    
     # create index
     esclient.update_index(test_data, len(test_data))
     time.sleep(2)
     # search
     query1 = {
         "type": 0,
-        "top_number": 5,
-        "query_text": "DVERGE: Diversifying Vulnerabilities for Enhanced Robust Generation of Ensembles"
+        "top_number": 10,
+        "query_text": "CNN"
     }
-    rest = esclient.search(query1)
-    pprint.pprint(f'rest1: {rest}')
+    # rest = esclient.search(query1)
+    # pprint.pprint(f'rest1: {rest}')
 
     query2 = {
         "type": 1,
         "top_number": 10,
         "query_text": {
-            "title": "[Oral at NeurIPS 2020] DVERGE: Diversifying Vulnerabilities for Enhanced Robust Generation of Ensembles",
+            "title": "A Study",
             "authors": "",
             "abstract": "",
             "content": "",
             "year": 2020,
         },
-        "operator": ["AND", "", "", "", "AND"]
+        "operator": ["OR", "", "", "", "AND"]
     }
     rest = esclient.search(query2)
-    pprint.pprint(f'rest2: {rest}')
+    pprint.pprint(f'rest2[{len(rest)}]: {rest}')
+    for item in rest:
+        if 'A Study on Encoding' in item['title']:
+            ipdb.set_trace()
+    exit()
 
     query3 = {
         "type": 2,
         "top_number": 10,
-        "query_text": "machine"
+        "query_text": "github"
     }
     rest = esclient.search(query3)
     pprint.pprint(f'rest3: {rest}')
+    for item in rest[0]['videoStruct']:
+        if 'github' in item['sentence']:
+            ipdb.set_trace()
