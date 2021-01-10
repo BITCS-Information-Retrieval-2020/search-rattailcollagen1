@@ -70,7 +70,7 @@ class DownloadClient:
                 file_name = file_name.strip(b'\00')
                 file_name = file_name.decode()
                 print('file name is {}, file size is {}'.format(file_name, file_size))
-                file_size += 4
+                file_size = file_size + 4
 
                 received_size = 0
                 out_file = open(self.compressed_path, 'wb')
@@ -80,14 +80,14 @@ class DownloadClient:
                     if file_size - received_size > 1024:
                         data = conn.recv(1024)
                         if strip_flag:
-                            data.lstrip(b'\00\00\00\00')
+                            data = data.lstrip(b'\00\00\00\00')
                             strip_flag = False
                             received_size += 4
                         received_size += len(data)
                     else:
                         data = conn.recv(file_size-received_size)
                         if strip_flag:
-                            data.lstrip(b'\00\00\00\00')
+                            data = data.lstrip(b'\00\00\00\00')
                             strip_flag = False
                         received_size = file_size
                     out_file.write(data)
