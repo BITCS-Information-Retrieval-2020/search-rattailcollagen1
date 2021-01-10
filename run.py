@@ -9,8 +9,21 @@ def init_variables(args):
     os.system('python main.py --mode init_var_file')
 
 
-def process(args, config):
+def recover(args):
+    """Recover information if the local es system crashed"""
+    # with open(args.var_file, 'r', encoding='utf-8') as var_json:
+    #    variables = json.load(var_json)
+    """Iteratively read data in each directory in /searcher/cache/[number]"""
+    """and read dicts from remote MongoDB"""
+    # for idx, next_pointer in enumerate(variables['next_pointer_list']):
+    #    dir_idx = idx + 1
 
+
+def process(args, config):
+    """Check for updating new data (including mongodb, videos, pdfs)
+        For online checking and updating
+    """
+    from_scratch_flag = bool(config.remote_from_scratch)
     while True:
         with open(args.var_file, 'r', encoding='utf-8') as var_json:
             variables = json.load(var_json)
@@ -18,6 +31,48 @@ def process(args, config):
         if variables['crawler_cache_dir_index'] < variables['cache_dir_index']:
             print('Nothing to update!')
             sleep(args.sleep_time)
+        else:  # something to update
+            print('Starting updating...')
+            pdf_dir = config['pdf_dir'].format(variables['crawler_cache_dir_index'])
+
+            cmd = 'python main.py --mode process_pdf --pdf_ip {0} --pdf_port {1} --pdf_dir {2} \
+                '.format(args.pdf_ip, args.pdf_port, pdf_dir)
+            os.system(cmd)
+            print('cmd: ', cmd)
+
+            video_dir = config['video_dir'].format(variables['crawler_cache_dir_index'])
+            cmd = 'python main.py --mode process_video --video_dir {0}\
+                '.format(video_dir)
+            os.system(cmd)
+            print('cmd: ', cmd)
+
+            if from_scratch_flag:
+                from_scratch_flag = False
+                cmd = 'python main.py --mode build_indices_remote --mongodb_ip {0}\
+                    --mongodb_port {1} --pdf_ip {2} --pdf_port {3} --es_ip {4}\
+                    --es_port {5} --delete_indices 1\
+                    '.format(args.mongodb_ip, args.mongodb_port,
+                             args.pdf_ip, args.pdf_port,
+                             args.es_ip, args.es_port
+                             )
+                os.system(cmd)
+                print('cmd: ', cmd)
+            else:
+                cmd = 'python main.py --mode build_indices_remote --mongodb_ip {0}\
+                    --mongodb_port {1} --pdf_ip {2} --pdf_port {3} --es_ip {4}\
+                    --es_port {5} --delete_indices 0\
+                    '.format(args.mongodb_ip, args.mongodb_port,
+                             args.pdf_ip, args.pdf_port,
+                             args.es_ip, args.es_port
+                             )
+                os.system(cmd)
+                print('cmd: ', cmd)
+
+            cmd = 'python main.py --mode update_cache_dir_index'
+            os.system(cmd)
+            print('cmd: ', cmd)
+            print('Successfully update dir: [{0}] !'.format(
+                variables['crawler_cache_dir_index']))
 
 
 def process_demo(args, config):
@@ -96,6 +151,9 @@ if __name__ == '__main__':
     parser.add_argument("--pdf_port",
                         type=str, default='8070',
                         help='port of grobid server')
+    parser.add_argument("--remote_from_scratch",
+                        type=int, default=1,
+                        help='whether to update es from scratch')
     parser.add_argument("--mongodb_ip",
                         type=str, default='127.0.0.1',
                         help='ip of mongodb server')

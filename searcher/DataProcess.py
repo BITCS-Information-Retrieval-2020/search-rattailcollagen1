@@ -3,16 +3,18 @@ from .PDFProcessor import PDFProcessor
 from .VideoProcessor import VideoProcessor
 from .ESClient import ESClient
 import os
-import argparse
+# import argparse
 import logging
 from time import sleep
 # logging.basicConfig(level=logging.WARNING)
 
+
 class DataProcess:
-    
-    def __init__(self, config, var_file, mongodb_ip, mongodb_port, es_ip, es_port,
-        connected=False, delete_indices = False, batch_size=200, local_mongo_drop_flag=True
-        ):
+
+    def __init__(self, config, var_file, mongodb_ip, mongodb_port, es_ip,
+                 es_port, connected=False, delete_indices=False,
+                 batch_size=200, local_mongo_drop_flag=True
+                 ):
         '''Initialize an object of DataProcess
 
             Parameters:
@@ -26,14 +28,16 @@ class DataProcess:
         self.sleep_time = 2
         if connected:
             """connect mongodb server from remote"""
-            mongodb_service_path = 'mongodb://{0}:{1}'.format(mongodb_ip, mongodb_port)
+            mongodb_service_path = \
+                'mongodb://{0}:{1}'.format(mongodb_ip, mongodb_port)
             mongodb_service_name = config['mongodb_service_name']
             mongodb_collection_name = config['mongodb_collection_name']
-            mongodb_increment_beginning_pointer = var_file['mongodb_increment_beginning_pointer']
+            mongodb_increment_beginning_pointer = \
+                var_file['mongodb_increment_beginning_pointer']
             self.DBer = DatabaseAccess(service_path=mongodb_service_path,
-                        service_name=mongodb_service_name,
-                        collection_name=mongodb_collection_name,
-                        increment_beginning_pointer=mongodb_increment_beginning_pointer)
+                                       service_name=mongodb_service_name,
+                                       collection_name=mongodb_collection_name,
+                                       increment_beginning_pointer=mongodb_increment_beginning_pointer)
             print('connect_remote_mongodb: Done!')
         else:
             """load mongodb from a json file"""
@@ -45,7 +49,7 @@ class DataProcess:
 
         self.PDFer = PDFProcessor()
         self.Videoer = VideoProcessor()
-        self.ESer = ESClient(ip_port='{0}:{1}'.format(es_ip, es_port), delete = delete_indices)
+        self.ESer = ESClient(ip_port='{0}:{1}'.format(es_ip, es_port), delete=delete_indices)
         print('Current path: ', self.currentPath)
 
     def process(self, pdf_ip, pdf_port, cache_dir_index=1):
@@ -63,7 +67,7 @@ class DataProcess:
         mongodb_increment_next_pointer = -1
         while True:
             """Iteratively fetch data from MongoDB"""
-            dataFromDB = self.DBer.read_batch(batch_size = self.batchSize)
+            dataFromDB = self.DBer.read_batch(batch_size=self.batchSize)
             if dataFromDB == []:
                 break
 
@@ -84,18 +88,19 @@ class DataProcess:
                 if item['pdfPath'] != "":
                     item['pdfPath'] = '/'.join(os.path.join('/data/cache', str(cache_dir_index), item['pdfPath']).split('\\'))
                 if item['videoPath'] != "":
-                    item['videoPath'] = '/'.join(os.path.join('/data/cache', str(cache_dir_index), item['videoPath']).split('\\'))
+                    item['videoPath'] = \
+                        '/'.join(os.path.join('/data/cache', str(cache_dir_index), item['videoPath']).split('\\'))
                 itemToESClient = item.copy()
-                
+
                 pdfPath = item['pdfPath']
                 pdf_path = '/'.join(os.path.join(self.currentPath, pdfPath[1:]).split('\\'))
                 videoPath = item['videoPath']
                 video_path = '/'.join(os.path.join(self.currentPath, videoPath[1:]).split('\\'))
-                
+
                 """Convert the corresponding pdf file and video file to the specific forms"""
                 if pdfPath != "":
-                    pdfText = self.PDFer.convert(server=pdf_ip, port=pdf_port, \
-                        pdf_path=pdf_path)
+                    pdfText = self.PDFer.convert(server=pdf_ip, port=pdf_port,
+                                                 pdf_path=pdf_path)
                     itemToESClient['pdfText'] = pdfText
                 else:
                     itemToESClient['pdfText'] = ""
@@ -107,26 +112,29 @@ class DataProcess:
                     itemToESClient['videoStruct'] = []
 
                 dataToESClient.append(itemToESClient)
-            
+
             """Insert dict list into the ES system"""
             # logging.warning(dataToESClient)
-            status = self.ESer.update_index(data = dataToESClient, batch_size = len(dataToESClient))
+            status = self.ESer.update_index(data=dataToESClient, batch_size=len(dataToESClient))
             logging.info(status)
             sleep(self.sleep_time)
             """Check if the cursor is in the end of the MongoDB"""
             if len(dataToESClient) < self.batchSize:
                 break
-        
+
         return mongodb_increment_next_pointer
-        
+
+
+'''
 if __name__ == '__main__':
     """This script is to read data from MongoDB, process PDFs as well as videos, and insert
-        them into the ES system. 
+        them into the ES system.
         We implement the process in several batches.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--batch_size", type = int, default=50)
+    parser.add_argument("--batch_size", type=int, default=50)
     args = parser.parse_args()
-    
-    dp = DataProcess(batch_size = args.batch_size)
+
+    dp = DataProcess(batch_size=args.batch_size)
     dp.process()
+'''

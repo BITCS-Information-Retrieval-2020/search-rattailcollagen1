@@ -43,6 +43,7 @@ def init_var_file(var_file_path, var_file):
     var_file['cache_dir_index'] = 1
     var_file['crawler_cache_dir_index'] = 0
     var_file['mongodb_increment_next_pointer'] = -1
+    var_file['next_pointer_list'] = []
     with open(var_file_path, 'w', encoding='utf-8') as f:
         json.dump(var_file, f)
 
@@ -112,6 +113,7 @@ def update_cache_dir_index(var_file_path, var_file):
     var_file['cache_dir_index'] = dir_index + 1
     var_file['mongodb_increment_beginning_pointer'] \
         = var_file['mongodb_increment_next_pointer']
+    var_file['next_pointer_list'].append(var_file['mongodb_increment_next_pointer'])
     with open(var_file_path, 'w', encoding='utf-8') as f:
         json.dump(var_file, f)
 
@@ -143,7 +145,11 @@ if __name__ == '__main__':
         1. python main.py --mode process_pdf --pdf_ip PDF_IP\
             --pdf_port PDF_PORT --pdf_dir PDF_DIR
         2. python main.py --mode process_video --video_dir VIDEO_DIR
-        3. python main.py --mode build_indices_remote --mongodb_ip MONGODB_IP\
+        3(first). python main.py --mode build_indices_remote --mongodb_ip MONGODB_IP\
+            --mongodb_port MONGODB_PORT \
+        --pdf_ip PDF_IP --pdf_port PDF_PORT --es_ip ES_IP --es_port ES_PORT\
+            --delete_indices 1
+        3(next). python main.py --mode build_indices_remote --mongodb_ip MONGODB_IP\
             --mongodb_port MONGODB_PORT \
         --pdf_ip PDF_IP --pdf_port PDF_PORT --es_ip ES_IP --es_port ES_PORT\
             --delete_indices 0
