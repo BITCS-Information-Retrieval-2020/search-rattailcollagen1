@@ -6,12 +6,8 @@ from pymongo.errors import BulkWriteError
 
 class DatabaseAccess:
     """
-        一点设想：希望部署MongoDB的同学可以将爬虫模块提供的MongoDB打包（拷贝）至
-        我们的/data文件夹下某处，然后通过运行一些指令（可以用Python单独写一个简单的脚本）的方式
-        来将这个MongoDB部署到本机。之后再利用该类（DatabaseAccess）来对MongoDB中的数据进行读取。
-        外层调用程序将通过self.read函数来批量读取MongoDB中的dict数据。
+        DatabaseAccess
     """
-
     DEFAULT_SERVICE_PATH = 'mongodb://127.0.0.1:27017'
     DEFAULT_SERVICE_NAME = 'mongodb'
     DEFAULT_COLLECTION_NAME = 'papers'
@@ -20,13 +16,15 @@ class DatabaseAccess:
                  service_path=DEFAULT_SERVICE_PATH,
                  service_name=DEFAULT_SERVICE_NAME,
                  collection_name=DEFAULT_COLLECTION_NAME,
-                 increment_beginning_pointer=-1):
+                 increment_beginning_pointer=-1,
+                 increment_ending_pointer=None):
         """
-
+            read section: (increment_beginning_pointer, increment_ending_pointer]
         :param service_path: 'mongodb://user:password@address:port/service_name'
         :param service_name: 'crawler'
         :param collection_name: 'papers'
         :param increment_beginning_pointer: -1 if default. maximum _id of the last increment data if specified.
+        :param increment_ending_pointer: None if default, restrict the maximum _id
         """
         self.service_path = service_path
         self.service_name = service_name
@@ -36,25 +34,37 @@ class DatabaseAccess:
         self.database = self.client[self.service_name]
         self.collection = self.database[self.collection_name]
 
-        # 上次增量数据集合的最大id
+        # 本次增量读取的起始指针（不含）
         self.increment_beginning_pointer = increment_beginning_pointer
-        # 等待更新的本次增量数据集合终止id,每次读取都将更新一次
-        self.increment_ending_pointer = self.increment_beginning_pointer
-        # 终止标志
+        # 本次增量读取的终止指针（包含）
+        self.increment_ending_pointer = increment_ending_pointer
+
+        self.default_query_object = None
+
+        # 本次批读取的终止指针
+        self.current_ending_pointer = self.increment_beginning_pointer
+        # 本次增量读取终止标志
         self.end_flag = False
 
         # self.batch_pointer = 0
         self.batch_size = 1
 
+    def build_query_object(self):
+        if self.increment_ending_pointer is not None:
+            if not isinstance(self.increment_ending_pointer, int):
+                raise ValueError('int expected instead of {}'.format(self.increment_ending_pointer))
+            query_object = {'_id': {'$gt': self.current_ending_pointer,
+                                    '$lte': self.increment_ending_pointer}}
+        else:
+            query_object = {'_id': {'$gt': self.current_ending_pointer}}
+
+        self.default_query_object = query_object
+
     def read_batch(self, batch_size=1):
         """
-            读取数据库，每次读取batch_size个数据，
-            并以list返回，list中的每一个元素为
-            一个dict。
-            Parameters:
-                batch_size: int
-            Return:
-                a list of dict, list = [] or len(list) < batch_size  means no more data
+            读取数据库，每次读取batch_size个数据，并以list返回，list中的每一个元素为一个dict。
+        :param batch_size: int
+        :return: a list of dict, list = [] or len(list) < batch_size  means no more data
         """
         self.batch_size = batch_size
 
@@ -68,7 +78,8 @@ class DatabaseAccess:
         #     self.batch_pointer).limit(self.batch_size)
 
         # after delete batch_pointer
-        batch_cursor = self.collection.find({'_id': {'$gt': self.increment_ending_pointer}}).limit(self.batch_size)
+        self.build_query_object()
+        batch_cursor = self.collection.find(self.default_query_object).limit(self.batch_size)
 
         batch_list, batch_length = self.build_batch_list(batch_cursor=batch_cursor)
 
@@ -88,11 +99,11 @@ class DatabaseAccess:
             self.end_flag = True
 
         try:
-            assert self.increment_ending_pointer + batch_length == batch_list[-1]['_id']
+            assert self.current_ending_pointer + batch_length == batch_list[-1]['_id']
         except AssertionError or Exception:
-            print('集合中存在中断主键: ({},{}]'.format(self.increment_ending_pointer, batch_list[-1]['_id']))
+            print('集合中存在中断主键: ({},{}]'.format(self.current_ending_pointer, batch_list[-1]['_id']))
 
-        self.increment_ending_pointer = batch_list[-1]['_id']
+        self.current_ending_pointer = batch_list[-1]['_id']
 
         return batch_list
 
