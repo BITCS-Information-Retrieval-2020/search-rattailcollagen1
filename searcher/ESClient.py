@@ -1,6 +1,6 @@
 from elasticsearch import Elasticsearch, helpers
-import ipdb, random, time, json, pprint, logging
-
+import ipdb, random, time, json, pprint, logging, math
+from time import sleep
 class ESClient:
 
     def __init__(self, ip_port, auth=('elastic', 'elastic123'), index_name='papers', video_index_name='video', delete=False):
@@ -155,7 +155,11 @@ class ESClient:
             index=self.index_name,
             body=dsl
         )
-        rest = [h['_source'] for h in hits['hits']['hits']]
+        # rest = [h['_source'] for h in hits['hits']['hits']]
+        rest = []
+        for h in hits['hits']['hits']:
+            h['_source']['_id'] = h['_id']
+            rest.append(h['_source'])
         return rest[0]
         
     def search_mode_1(self, query_text, topn):
@@ -170,7 +174,11 @@ class ESClient:
             body=dsl,
             size=topn
         )
-        rest = [h['_source'] for h in hits['hits']['hits']]
+        #rest = [h['_source'] for h in hits['hits']['hits']]
+        rest = []
+        for h in hits['hits']['hits']:
+            h['_source']['_id'] = h['_id']
+            rest.append(h['_source'])
         return rest
         
     def search_mode_2(self, query, operator, topn):
@@ -197,7 +205,11 @@ class ESClient:
             body=dsl,
             size=topn,
         )
-        rest = [h['_source'] for h in hits['hits']['hits']]
+        # rest = [h['_source'] for h in hits['hits']['hits']]
+        rest = []
+        for h in hits['hits']['hits']:
+            h['_source']['_id'] = h['_id']
+            rest.append(h['_source'])
         return rest
     
     def search_mode_3(self, query_text, topn):
@@ -219,7 +231,37 @@ class ESClient:
         )
         rest = [h['_source'] for h in hits['hits']['hits']]
         return rest
-        
+
+    def get_all_title(self, titles):
+        while True:
+            body = {
+                "_source": ["title"],
+                "query": {
+                    "match_all": {}
+                }
+            }
+            scroll = '5m'
+            size = 1000
+            res = self.es.search(
+                index=self.index_name,
+                scroll=scroll,
+                size=size,
+                body=body
+            )
+            all_data = res.get("hits").get("hits")
+            scroll_id = res["_scroll_id"]
+            total = res["hits"]["total"]["value"]
+            for i in range(math.ceil(total / size)):
+                res = self.es.scroll(scroll_id=scroll_id, scroll='5m')
+                all_data += res["hits"]["hits"]
+
+            for item in all_data:
+                cur_title = item['_source']['title']
+                if cur_title not in titles:
+                    titles.append(cur_title)
+            sleep(43200)
+
+
 if __name__ == "__main__":
     # test data
     with open('papers.json', 'rb') as f:

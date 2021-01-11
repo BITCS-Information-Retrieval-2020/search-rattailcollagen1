@@ -1,7 +1,8 @@
-from .DownloadClient import DownloadClient
-from .ESClient import ESClient
+from searcher.DownloadClient import DownloadClient
+from searcher.ESClient import ESClient
 import threading
 import os
+import re
 
 
 class SearchEngine:
@@ -18,12 +19,18 @@ class SearchEngine:
         :param es_port: es服务的端口
         """
         self.client = DownloadClient(download_client_ip, download_client_port)
+        self.es = ESClient([{"host": es_ip, "port": es_port}])
+        self.titles = []
+
+        # thread for update data
         t = threading.Thread(target=self.client.send, args=(download_server_ip, download_server_port))
         t.setDaemon(True)
         t.start()
-        es_param = [{"host": es_ip,
-                    "port": es_port}]
-        self.es = ESClient(es_param)
+
+        # thread for update title list
+        t = threading.Thread(target=self.es.get_all_title, args=(self.titles,))
+        t.setDaemon(True)
+        t.start()
 
     def search(self, query):
         """
@@ -32,6 +39,39 @@ class SearchEngine:
         :return: 结果列表
         """
         res = self.es.search(query)
+        processed_res = []
+        abs_dirname = os.path.dirname(os.path.abspath(__file__))
+        if query["type"] == 2:
+            for item in res:
+                content = dict()
+                content["timeStart"] = item["timeStart"]
+                content["timeEnd"] = item["timeEnd"]
+                content["sentence"] = item["sentence"]
+                paper = self.es.search_by_id(item['paper_id'])
+                paper["videoStruct"] = [content]
+                paper["pdfPath"] = abs_dirname + paper["pdfPath"]
+                paper["videoPath"] = abs_dirname + paper["videoPath"]
+                processed_res.append(paper)
+        else:
+            for item in res:
+                item["pdfPath"] = abs_dirname + item["pdfPath"]
+                item["videoPath"] = abs_dirname + item["videoPath"]
+                processed_res.append(item)
+        return processed_res
+
+    def auto_complete(self, query):
+        cnt = 0
+        res = []
+        for title in self.titles:
+            if re.search(query, title, re.IGNORECASE):
+                res.append(title)
+                cnt += 1
+            if cnt > 10:
+                break
+        return res
+
+    def search_by_id(self, id_):
+        res = self.es.search_by_id(id_)
         abs_dirname = os.path.dirname(os.path.abspath(__file__))
         for item in res:
             item["pdfPath"] = abs_dirname + item["pdfPath"]
