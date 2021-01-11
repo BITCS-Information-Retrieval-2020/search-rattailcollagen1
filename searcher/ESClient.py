@@ -3,9 +3,18 @@ import ipdb, random, time, json, pprint, logging
 
 class ESClient:
 
-    def __init__(self, ip_port, auth=('elastic', 'elastic123'), index_name='papers', delete=False):
+    def __init__(self, ip_port, auth=('elastic', 'elastic123'), index_name='papers', video_index_name='video', delete=False):
         self.es = Elasticsearch(ip_port, http_auth=auth)
-        self.index_name = index_name
+        self.index_name, self.video_index_name = index_name, video_index_name
+        self.mapping_vs = {
+            'properties': {
+                "timeStart": {'type': 'text'},
+                "timeEnd": {'type': 'text'},
+                "sentence": {'type': 'keyword'},
+                'title': {'type': 'keyword'},
+                "videoPath": {'type': 'text'},
+            }
+        }
         self.mapping = {
             'properties': {
                 'title': {
@@ -36,17 +45,6 @@ class ESClient:
                     'type': 'text',
                     'copy_to': 'full_field',
                 },
-                # videoStruct array type
-                "videoStruct": {
-                    "properties": {
-                        "timeStart": {'type': 'text'},
-                        "timeEnd": {'type': 'text'},
-                        "sentence": {
-                            'type': 'text',
-                            'copy_to': 'full_field',
-                        },
-                    }
-                },
                 # _all field
                 'full_field': {
                     'type': 'text',
@@ -56,13 +54,27 @@ class ESClient:
         # if not exist, create the index
         if delete:
             self.es.indices.delete(index=self.index_name)
+            self.es.indices.delete(index=self.video_index_name)
         if not self.es.indices.exists(index=self.index_name):
             self.es.indices.create(index=self.index_name)
             self.es.indices.put_mapping(body=self.mapping, index=self.index_name)
             print(f'[!] create index: {self.index_name}')
+            
+            self.es.indices.create(index=self.video_index_name)
+            self.es.indices.put_mapping(body=self.mapping_vs, index=self.video_index_name)
+            print(f'[!] create index: {self.video_index_name}')
         # set the max windows size
         self.es.indices.put_settings(
             index=self.index_name,
+            body={
+                'index': {
+                    'max_result_window': 500000,
+                    'refresh_interval': '1s',
+                },
+            }
+        )
+        self.es.indices.put_settings(
+            index=self.video_index_name,
             body={
                 'index': {
                     'max_result_window': 500000,
@@ -83,14 +95,33 @@ class ESClient:
 
         '''
         try:
+            # write into video struct
+            count = self.es.count(index=self.video_index_name)['count']
+            actions = []
+            for i, item in enumerate(data):
+                for s in item['videoStruct']:
+                    actions.append({
+                        'timeStart': s['timeStart'],
+                        'timeEnd': s['timeEnd'],
+                        'sentence': s['sentence'],
+                        'title': item['title'],
+                        'videoPath': item['videoPath'],
+                        '_index': self.video_index_name,
+                        '_id': count
+                    })
+                    count += 1
+            helpers.bulk(self.es, actions)
+            
             count = self.es.count(index=self.index_name)['count']
             actions = []
             for i, item in enumerate(data):
                 item['_index'] = self.index_name
                 item['_id'] = count + i
+                item.pop('videoStruct')
                 actions.append(item)
             helpers.bulk(self.es, actions)
-        except:
+        except Exception as e:
+            print(e)
             return False
         return True
 
@@ -157,18 +188,19 @@ class ESClient:
         return rest
     
     def search_mode_3(self, query_text, topn):
-        # https://www.elastic.co/guide/cn/elasticsearch/guide/current/nested-objects.html
-        # elasticsearch flat the nested object
+        value = query_text.strip().split()
         dsl = {
             'query': {
-                'match': {
-                    'videoStruct.sentence': query_text
+                'bool': {
+                    'should': [
+                        {'wildcard': {'sentence': f'*{v}*'}} for v in value
+                    ]
                 }
             }
         }
         print(dsl)
         hits = self.es.search(
-            index=self.index_name,
+            index=self.video_index_name,
             body=dsl,
             size=topn,
         )
@@ -182,8 +214,11 @@ if __name__ == "__main__":
     esclient = ESClient('10.1.114.121:9200', delete=True)
     
     # create index
-    esclient.update_index(test_data, len(test_data))
-    time.sleep(2)
+    if esclient.update_index(test_data, len(test_data)):
+        print('write into ES successfully')
+    else:
+        print('write into ES failed')
+    time.sleep(3)
     # search
     query1 = {
         "type": 0,
@@ -205,20 +240,18 @@ if __name__ == "__main__":
         },
         "operator": ["OR", "", "", "", ""]
     }
-    rest = esclient.search(query2)
+    # rest = esclient.search(query2)
     # pprint.pprint(f'rest2[{len(rest)}]: {rest}')
-    print(len(rest))
-    for item in rest:
-        ipdb.set_trace()
-    exit()
+    # print(len(rest))
+    # for item in rest:
+    #     ipdb.set_trace()
 
     query3 = {
         "type": 2,
         "top_number": 10,
-        "query_text": "github"
+        "query_text": "github experiment"
     }
     rest = esclient.search(query3)
-    pprint.pprint(f'rest3: {rest}')
-    for item in rest[0]['videoStruct']:
-        if 'github' in item['sentence']:
-            ipdb.set_trace()
+    pprint.pprint(f'{len(rest)}')
+    for item in rest:
+        ipdb.set_trace()
