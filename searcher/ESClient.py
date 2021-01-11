@@ -13,6 +13,7 @@ class ESClient:
                 "sentence": {'type': 'keyword'},
                 'title': {'type': 'keyword'},
                 "videoPath": {'type': 'text'},
+                'paper_id': {'type': 'integer'},
             }
         }
         self.mapping = {
@@ -95,10 +96,11 @@ class ESClient:
 
         '''
         try:
-            # write into video struct
-            count = self.es.count(index=self.video_index_name)['count']
+            count_paper = self.es.count(index=self.index_name)['count']
+            count_video = self.es.count(index=self.video_index_name)['count']
             actions = []
             for i, item in enumerate(data):
+                # video index
                 for s in item['videoStruct']:
                     actions.append({
                         'timeStart': s['timeStart'],
@@ -107,16 +109,14 @@ class ESClient:
                         'title': item['title'],
                         'videoPath': item['videoPath'],
                         '_index': self.video_index_name,
-                        '_id': count
+                        '_id': count_video,
+                        'paper_id': count_paper + i
                     })
-                    count += 1
-            helpers.bulk(self.es, actions)
-            
-            count = self.es.count(index=self.index_name)['count']
-            actions = []
-            for i, item in enumerate(data):
+                    count_video += 1
+                
+                # paper index
                 item['_index'] = self.index_name
-                item['_id'] = count + i
+                item['_id'] = count_paper + i
                 item.pop('videoStruct')
                 actions.append(item)
             helpers.bulk(self.es, actions)
@@ -144,6 +144,19 @@ class ESClient:
         except Exception as e:
             logging.info(f'[!] search failed: {e}')
             return []
+        
+    def search_by_id(self, id_):
+        dsl = {
+            'query': {
+                'match': {'_id': id_}
+            }
+        }
+        hits = self.es.search(
+            index=self.index_name,
+            body=dsl
+        )
+        rest = [h['_source'] for h in hits['hits']['hits']]
+        return rest[0]
         
     def search_mode_1(self, query_text, topn):
         dsl = {
@@ -245,6 +258,10 @@ if __name__ == "__main__":
     # print(len(rest))
     # for item in rest:
     #     ipdb.set_trace()
+    
+    # rest = esclient.search_by_id(0)
+    # print(rest)
+    # exit()
 
     query3 = {
         "type": 2,
@@ -254,4 +271,5 @@ if __name__ == "__main__":
     rest = esclient.search(query3)
     pprint.pprint(f'{len(rest)}')
     for item in rest:
+        paper = esclient.search_by_id(item['paper_id'])
         ipdb.set_trace()
