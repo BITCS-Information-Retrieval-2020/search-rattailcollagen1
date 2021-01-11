@@ -132,8 +132,12 @@ class ESClient:
     def search_mode_2(self, query, operator, topn):
         bool_ = {'must': [], 'must_not': [], 'should': []}
         for (key, value), op in zip(query.items(), operator):
-            if op in ['OR', 'AND']:
-                bool_['should'].append({"match": {key: value}})
+            if op == 'OR':
+                value = value.strip().split()
+                for v in value:
+                    bool_['should'].append({"wildcard": {key: f'*{v}*'}})
+            elif op == 'AND':
+                bool_['must'].append({"match": {key: value}})
             elif op == 'NOT':
                 bool_['must_not'].append({"match": {key: value}})
             elif not op:
@@ -193,19 +197,19 @@ if __name__ == "__main__":
         "type": 1,
         "top_number": 10,
         "query_text": {
-            "title": "A Study",
+            "title": "Oral NeurIPS Spotlight",
             "authors": "",
             "abstract": "",
             "content": "",
-            "year": 2020,
+            "year": "",
         },
-        "operator": ["OR", "", "", "", "AND"]
+        "operator": ["OR", "", "", "", ""]
     }
     rest = esclient.search(query2)
-    pprint.pprint(f'rest2[{len(rest)}]: {rest}')
+    # pprint.pprint(f'rest2[{len(rest)}]: {rest}')
+    print(len(rest))
     for item in rest:
-        if 'A Study on Encoding' in item['title']:
-            ipdb.set_trace()
+        ipdb.set_trace()
     exit()
 
     query3 = {
