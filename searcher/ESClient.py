@@ -110,13 +110,13 @@ class ESClient:
                         'videoPath': item['videoPath'],
                         '_index': self.video_index_name,
                         '_id': count_video,
-                        'paper_id': count_paper + i
+                        'paper_id': item['_id'] 
                     })
                     count_video += 1
                 
                 # paper index
                 item['_index'] = self.index_name
-                item['_id'] = count_paper + i
+                item['_id'] = item['_id']
                 item.pop('videoStruct')
                 actions.append(item)
             helpers.bulk(self.es, actions)
