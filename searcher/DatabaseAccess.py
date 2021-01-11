@@ -38,8 +38,12 @@ class DatabaseAccess:
 
         # 上次增量数据集合的最大id
         self.increment_beginning_pointer = increment_beginning_pointer
-        # TODO 最后可能修改初始值为increment_beginning_pointer，并调整read_batch
-        self.batch_pointer = 0
+        # 等待更新的本次增量数据集合终止id,每次读取都将更新一次
+        self.increment_ending_pointer = self.increment_beginning_pointer
+        # 终止标志
+        self.end_flag = False
+
+        # self.batch_pointer = 0
         self.batch_size = 1
 
     def read_batch(self, batch_size=1):
@@ -60,18 +64,44 @@ class DatabaseAccess:
         #              '$lt': self.increment_beginning_pointer + self.batch_pointer + self.batch_size}})
 
         # 如果集合中的主键中间存在中断，那么：
-        batch_cursor = self.collection.find({'_id': {'$gt': self.increment_beginning_pointer}}).skip(
-            self.batch_pointer).limit(self.batch_size)
+        # batch_cursor = self.collection.find({'_id': {'$gt': self.increment_beginning_pointer}}).skip(
+        #     self.batch_pointer).limit(self.batch_size)
 
-        self.batch_pointer += self.batch_size
-        return self.build_batch_list(batch_cursor=batch_cursor)
+        # after delete batch_pointer
+        batch_cursor = self.collection.find({'_id': {'$gt': self.increment_ending_pointer}}).limit(self.batch_size)
+
+        batch_list, batch_length = self.build_batch_list(batch_cursor=batch_cursor)
+
+        # if batch_length == self.batch_size:
+        #     self.batch_pointer += self.batch_size
+        # elif 0 < batch_length < self.batch_size:
+        #     self.batch_pointer += batch_length
+        #     self.end_flag = True
+        # elif batch_length == 0:
+        #     # self.batch_pointer += 0
+        #     self.end_flag = True
+
+        if batch_length == 0:
+            self.end_flag = True
+            return batch_list
+        elif 0 < batch_length < self.batch_size:
+            self.end_flag = True
+
+        try:
+            assert self.increment_ending_pointer + batch_length == batch_list[-1]['_id']
+        except AssertionError or Exception:
+            print('集合中存在中断主键: ({},{}]'.format(self.increment_ending_pointer, batch_list[-1]['_id']))
+
+        self.increment_ending_pointer = batch_list[-1]['_id']
+
+        return batch_list
 
     @staticmethod
     def build_batch_list(batch_cursor):
         batch_list = []
         for item in batch_cursor:
             batch_list.append(item)
-        return batch_list
+        return batch_list, len(batch_list)
 
     def import_json_db(self, db_path='./data/papers.json', drop_flag=False):
         """
