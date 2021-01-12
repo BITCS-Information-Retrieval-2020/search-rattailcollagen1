@@ -18,7 +18,7 @@ class DownloadClient:
         self.compressed_path = self.data_path + '/to_send.zip'
         print(self.data_path)
         if not os.path.exists(self.data_path):
-            os.mkdir(self.data_path)
+            os.makedirs(self.data_path)
 
     def find_max(self):
         dir_itr = iter(os.walk(self.data_path))
