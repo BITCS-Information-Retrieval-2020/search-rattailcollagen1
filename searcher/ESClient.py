@@ -54,13 +54,18 @@ class ESClient:
         }
         # if not exist, create the index
         if delete:
-            self.es.indices.delete(index=self.index_name)
-            self.es.indices.delete(index=self.video_index_name)
+            if self.es.indices.exists(index=self.index_name):
+                self.es.indices.delete(index=self.index_name)
+                print(f'[!] delete index: {self.index_name}')
+            if self.es.indices.exists(index=self.video_index_name):
+                self.es.indices.delete(index=self.video_index_name)
+                print(f'[!] delete index: {self.video_index_name}')
         if not self.es.indices.exists(index=self.index_name):
             self.es.indices.create(index=self.index_name)
             self.es.indices.put_mapping(body=self.mapping, index=self.index_name)
             print(f'[!] create index: {self.index_name}')
             
+        if not self.es.indices.exists(index=self.video_index_name):
             self.es.indices.create(index=self.video_index_name)
             self.es.indices.put_mapping(body=self.mapping_vs, index=self.video_index_name)
             print(f'[!] create index: {self.video_index_name}')
