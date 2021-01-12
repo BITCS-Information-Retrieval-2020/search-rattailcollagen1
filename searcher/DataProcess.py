@@ -31,14 +31,14 @@ class DataProcess:
         self.DBer = DatabaseAccess(service_path=mongodb_service_path,
                                    service_name=mongodb_service_name,
                                    collection_name=mongodb_collection_name,
-                                   increment_beginning_pointer=mongodb_beginning_pointer-1,
+                                   increment_beginning_pointer=mongodb_beginning_pointer - 1,
                                    increment_ending_pointer=mongodb_ending_pointer)
         print('connect_remote_mongodb: Done!')
 
         self.PDFer = PDFProcessor()
         self.Videoer = VideoProcessor()
         self.ESer = ESClient(index_name=es_index_name,
-                             video_index_name=es_index_name+'_video',
+                             video_index_name=es_index_name + '_video',
                              ip_port='{0}:{1}'.format(es_ip, es_port),
                              delete=delete_indices)
         print('Current path: ', self.currentPath)
@@ -91,6 +91,9 @@ class DataProcess:
                 videoPath = item['videoPath']
                 video_path = '/'.join(os.path.join(self.currentPath, videoPath[1:]).split('\\'))
 
+                print('_id: ', str(item['_id']))
+                print('pdf_path: ', pdf_path)
+                print('video_path: ', video_path)
                 """Convert the corresponding pdf file and video file to the specific forms"""
                 if pdfPath != "":
                     pdfText = self.PDFer.convert(server=pdf_ip, port=pdf_port, pdf_path=pdf_path)
