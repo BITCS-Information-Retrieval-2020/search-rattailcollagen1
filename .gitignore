@@ -21,3 +21,4 @@
 /searcher.egg-info
 /build
 /dist
+/searcher/data/MongoDB

@@ -41,7 +41,7 @@ def build_indices(config, mongodb_service_path, mongodb_service_name,
                        es_index_name=index_name,
                        delete_indices=delete_indices,
                        batch_size=batch_size,
-                       mongodb_beginning_pointer=mongodb_beginning_pointer, 
+                       mongodb_beginning_pointer=mongodb_beginning_pointer,
                        mongodb_ending_pointer=mongodb_ending_pointer
                        )
 
