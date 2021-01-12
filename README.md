@@ -32,3 +32,15 @@
 | SearchEngine |    3     |     **王昊**     |
 | DownloadClient |    3     | 孔祥宜  |
 | DownloadServer |    3     | 公培元 |
+
+## Installation
+```shell
+# Clone our repository first
+git clone https://github.com/BITCS-Information-Retrieval-2020/search-rattailcollagen1.git
+cd search-rattailcollagen1
+# Make sure we have up-to-date versions of dependencies
+pip install -r requirements.txt
+python setup.py install
+```
+## Using the package in your Python
+Please see `example.py`.
