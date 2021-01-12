@@ -6,7 +6,8 @@ import re
 
 
 class SearchEngine:
-    def __init__(self, download_server_ip, download_server_port, download_client_ip, download_client_port, es_ip, es_port):
+    def __init__(self, download_server_ip, download_server_port, download_client_ip, download_client_port,
+                 es_ip, es_port, index_name, video_index_name):
         """
         1.调用DowonloadClient中的file_tag()检查文件是否下好，
         如果没下好，先调用DownloadClient中的download()进行下载
@@ -19,7 +20,7 @@ class SearchEngine:
         :param es_port: es服务的端口
         """
         self.client = DownloadClient(download_client_ip, download_client_port)
-        self.es = ESClient([{"host": es_ip, "port": es_port}])
+        self.es = ESClient([{"host": es_ip, "port": es_port}], index_name=index_name, video_index_name=video_index_name)
         self.titles = []
 
         # thread for update data
