@@ -1,6 +1,12 @@
 from elasticsearch import Elasticsearch, helpers
-import ipdb, random, time, json, pprint, logging, math
+import ipdb
+import json
+import pprint
+import logging
+import math
 from time import sleep
+
+
 class ESClient:
 
     def __init__(self, ip_port, auth=('elastic', 'elastic123'), index_name='papers', video_index_name='video', delete=False):
@@ -64,7 +70,7 @@ class ESClient:
             self.es.indices.create(index=self.index_name)
             self.es.indices.put_mapping(body=self.mapping, index=self.index_name)
             print(f'[!] create index: {self.index_name}')
-            
+
         if not self.es.indices.exists(index=self.video_index_name):
             self.es.indices.create(index=self.video_index_name)
             self.es.indices.put_mapping(body=self.mapping_vs, index=self.video_index_name)
@@ -88,8 +94,7 @@ class ESClient:
                 },
             }
         )
-        # print(f'[!] init ESClient successfully')
-    
+
     def update_index(self, data, batch_size):
         '''
             建立索引，返回是否成功。
@@ -101,7 +106,7 @@ class ESClient:
 
         '''
         try:
-            count_paper = self.es.count(index=self.index_name)['count']
+            # count_paper = self.es.count(index=self.index_name)['count']
             count_video = self.es.count(index=self.video_index_name)['count']
             actions = []
             for i, item in enumerate(data):
@@ -115,10 +120,10 @@ class ESClient:
                         'videoPath': item['videoPath'],
                         '_index': self.video_index_name,
                         '_id': count_video,
-                        'paper_id': item['_id'] 
+                        'paper_id': item['_id'],
                     })
                     count_video += 1
-                
+
                 # paper index
                 item['_index'] = self.index_name
                 item['_id'] = item['_id']
@@ -149,7 +154,7 @@ class ESClient:
         except Exception as e:
             logging.info(f'[!] search failed: {e}')
             return []
-        
+
     def search_by_id(self, id_):
         dsl = {
             'query': {
@@ -166,7 +171,7 @@ class ESClient:
             h['_source']['_id'] = h['_id']
             rest.append(h['_source'])
         return rest[0]
-        
+
     def search_mode_1(self, query_text, topn):
         dsl = {
             'query': {
@@ -179,13 +184,13 @@ class ESClient:
             body=dsl,
             size=topn
         )
-        #rest = [h['_source'] for h in hits['hits']['hits']]
+        # rest = [h['_source'] for h in hits['hits']['hits']]
         rest = []
         for h in hits['hits']['hits']:
             h['_source']['_id'] = h['_id']
             rest.append(h['_source'])
         return rest
-        
+
     def search_mode_2(self, query, operator, topn):
         bool_ = {'must': [], 'must_not': [], 'should': []}
         for (key, value), op in zip(query.items(), operator):
@@ -216,7 +221,7 @@ class ESClient:
             h['_source']['_id'] = h['_id']
             rest.append(h['_source'])
         return rest
-    
+
     def search_mode_3(self, query_text, topn):
         value = query_text.strip().split()
         dsl = {
@@ -272,13 +277,13 @@ if __name__ == "__main__":
     with open('papers.json', 'rb') as f:
         test_data = json.load(f)
     esclient = ESClient('10.1.114.121:9200', delete=True)
-    
+
     # create index
     if esclient.update_index(test_data, len(test_data)):
         print('write into ES successfully')
     else:
         print('write into ES failed')
-    time.sleep(3)
+    sleep(3)
     # search
     query1 = {
         "type": 0,
@@ -305,7 +310,6 @@ if __name__ == "__main__":
     # print(len(rest))
     # for item in rest:
     #     ipdb.set_trace()
-    
     # rest = esclient.search_by_id(0)
     # print(rest)
     # exit()
