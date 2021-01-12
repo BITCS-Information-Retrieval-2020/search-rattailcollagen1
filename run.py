@@ -5,138 +5,167 @@ import os
 import json
 
 
-def init_variables(args):
-    os.system('python main.py --mode init_var_file')
+def check_dir_updated(dir_idx):
+    """check if the /searcher/cache/[number] dir is updated"""
+    cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
+    cache_dir = cur_file_path + '/searcher/data/cache/'
+    increment_info_json = os.path.join(cache_dir, str(dir_idx), 'updated.json')
+
+    if os.path.exists(increment_info_json):
+        with open(increment_info_json, 'r', encoding='utf-8') as f:
+            increment_info = json.load(f)
+            if increment_info['updated'] == 0:
+                return False
+            else:
+                return True
+    else:
+        return False
 
 
-def recover(args):
+def set_processed_or_not(begin_dir_index, end_dir_index, set_updated_or_not):
+    """To set which directory to be unchanged/changed"""
+    begin_idx = begin_dir_index
+    end_idx = end_dir_index
+    cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
+    cache_dir = cur_file_path + '/searcher/data/cache/'
+    cache_files = os.listdir(cache_dir)
+    cache_subdirs = []
+    for item in cache_files:
+        item_path = os.path.join(cache_dir, item)
+        if os.path.isdir(item_path):
+            item = int(item)
+            cache_subdirs.append(item)
+
+    # filter all of the subdirs need to be processed
+    cache_subdirs_tmp = []
+    for item in cache_subdirs:
+        if (begin_idx == -1 or item >= begin_idx) and (end_idx == -1 or item <= end_idx):
+            cache_subdirs_tmp.append(item)
+
+    # set the correponding value of 'updated' in increment_info.json to 0
+    cache_subdirs = cache_subdirs_tmp
+    for item in cache_subdirs:
+        increment_info_json = os.path.join(cache_dir, str(item), 'updated.json')
+        cur_dict = {}
+        cur_dict['updated'] = set_updated_or_not
+        with open(increment_info_json, 'w', encoding='utf-8') as f:
+            json.dump(cur_dict, f)
+
+
+def find_unprocessed_dir():
+    """find all the unprocessed dirs"""
+    cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
+    cache_dir = cur_file_path + '/searcher/data/cache/'
+    cache_files = os.listdir(cache_dir)
+    cache_subdirs = []
+
+    for item in cache_files:
+        item_path = os.path.join(cache_dir, item)
+        if os.path.isdir(item_path) and not check_dir_updated(dir_idx=item):
+            item = int(item)
+            cache_subdirs.append(item)
+            set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=0)
+
+    return cache_subdirs
+
+
+def process(args, specific_dir_list=None):
+    """tell function 'recovery' which directory need to be processed """
+    """check if there is new directory in /searcher/data/cache/"""
+    # 遍历/searcher/data/cache/下的当前所有带标号的文件夹
+    cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
+    cache_dir = cur_file_path + '/searcher/data/cache/'
+    cache_files = os.listdir(cache_dir)
+    cache_subdirs = []
+
+    # the following if condition is just for the two crawler groups
+    # it will be deleted later
+    """Will be deleted: begin"""
+    if specific_dir_list is not None:
+        recover(args=args, cache_subdirs=specific_dir_list, from_scratch=True)
+        print('Finish loading mongodb, name: {0}, dirs: {1}',
+              args.es_index_name + ' : ' + args.es_video_index_name,
+              specific_dir_list)
+        return
+    """Will be deleted: end"""
+
+    # whether to set all of the directory as unprocessed
+    for item in cache_files:
+        item_path = os.path.join(cache_dir, item)
+        if os.path.isdir(item_path):
+            item = int(item)
+            cache_subdirs.append(item)
+            set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=0)
+
+    recover(args=args, cache_subdirs=cache_subdirs, from_scratch=True)
+    for item in cache_subdirs:
+        set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=1)
+
+    while True:
+        sleep(32)
+        print('[!] Starting update...')
+        new_cache_subdirs = find_unprocessed_dir()
+        recover(args=args, cache_subdirs=new_cache_subdirs, from_scratch=False)
+        for item in new_cache_subdirs:
+            set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=1)
+        print('[!] Finish update dirs:{0}'.format(new_cache_subdirs))
+
+
+def recover(args, cache_subdirs, from_scratch):
     """Recover information if the local es system crashed"""
-    # with open(args.var_file, 'r', encoding='utf-8') as var_json:
-    #    variables = json.load(var_json)
-    """Iteratively read data in each directory in /searcher/cache/[number]"""
-    """and read dicts from remote MongoDB"""
-    # for idx, next_pointer in enumerate(variables['next_pointer_list']):
-    #    dir_idx = idx + 1
 
+    cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
+    cache_dir = cur_file_path + '/searcher/data/cache/'
 
-def process(args, config):
-    """Check for updating new data (including mongodb, videos, pdfs)
-        For online checking and updating
-    """
-    from_scratch_flag = bool(config.remote_from_scratch)
-    while True:
-        with open(args.var_file, 'r', encoding='utf-8') as var_json:
-            variables = json.load(var_json)
-        # nothing to update
-        if variables['crawler_cache_dir_index'] < variables['cache_dir_index']:
-            print('Nothing to update!')
-            sleep(args.sleep_time)
-        else:  # something to update
-            print('Starting updating...')
-            pdf_dir = config['pdf_dir'].format(variables['crawler_cache_dir_index'])
+    # 对于遍历到的每一个文件夹，首先调用PDFProcessor和VideoProcessor来处理这里的所有pdfs和videos
+    for item in cache_subdirs:
+        subdir = os.path.join(cache_dir, str(item))
 
-            cmd = 'python main.py --mode process_pdf --pdf_ip {0} --pdf_port {1} --pdf_dir {2} \
+        pdf_dir = os.path.join(subdir, 'PDFs')
+        cmd = 'python main.py --mode process_pdf --pdf_ip {0} --pdf_port {1} --pdf_dir {2} \
                 '.format(args.pdf_ip, args.pdf_port, pdf_dir)
+        os.system(cmd)
+        print('cmd: ', cmd)
+
+        video_dir = os.path.join(subdir, 'videos')
+        cmd = 'python main.py --mode process_video --video_dir {0}'.format(video_dir)
+        os.system(cmd)
+        print('cmd: ', cmd)
+
+    # 先把from_scratch设置成true，然后进行第一遍更新indices
+    # 然后把from_scratch设置为false，从而处理之后的更新
+        if from_scratch:
+            from_scratch = False
+            cmd = 'python main.py --mode build_indices_remote --mongodb_service_path {0}\
+                --mongodb_service_name {1} --mongodb_collection_name {2} --pdf_ip {3} --pdf_port {4}\
+                --es_ip {5} --es_port {6} --delete_indices 1 --processed_dir {7} --index_name {8}\
+                '.format(args.mongodb_service_path, args.mongodb_service_name, args.mongodb_collection_name,
+                         args.pdf_ip, args.pdf_port,
+                         args.es_ip, args.es_port,
+                         subdir, args.index_name
+                         )
             os.system(cmd)
             print('cmd: ', cmd)
-
-            video_dir = config['video_dir'].format(variables['crawler_cache_dir_index'])
-            cmd = 'python main.py --mode process_video --video_dir {0}\
-                '.format(video_dir)
+        else:
+            cmd = 'python main.py --mode build_indices_remote --mongodb_service_path {0}\
+                --mongodb_service_name {1} --mongodb_collection_name {2} --pdf_ip {3} --pdf_port {4}\
+                --es_ip {5} --es_port {6} --delete_indices 0 --process_dir {7} --index_name {8}\
+                '.format(args.mongodb_service_path, args.mongodb_service_name, args.mongodb_collection_name,
+                         args.pdf_ip, args.pdf_port,
+                         args.es_ip, args.es_port,
+                         subdir, args.index_name
+                         )
             os.system(cmd)
             print('cmd: ', cmd)
-
-            if from_scratch_flag:
-                from_scratch_flag = False
-                cmd = 'python main.py --mode build_indices_remote --mongodb_ip {0}\
-                    --mongodb_port {1} --pdf_ip {2} --pdf_port {3} --es_ip {4}\
-                    --es_port {5} --delete_indices 1\
-                    '.format(args.mongodb_ip, args.mongodb_port,
-                             args.pdf_ip, args.pdf_port,
-                             args.es_ip, args.es_port
-                             )
-                os.system(cmd)
-                print('cmd: ', cmd)
-            else:
-                cmd = 'python main.py --mode build_indices_remote --mongodb_ip {0}\
-                    --mongodb_port {1} --pdf_ip {2} --pdf_port {3} --es_ip {4}\
-                    --es_port {5} --delete_indices 0\
-                    '.format(args.mongodb_ip, args.mongodb_port,
-                             args.pdf_ip, args.pdf_port,
-                             args.es_ip, args.es_port
-                             )
-                os.system(cmd)
-                print('cmd: ', cmd)
-
-            cmd = 'python main.py --mode update_cache_dir_index'
-            os.system(cmd)
-            print('cmd: ', cmd)
-            print('Successfully update dir: [{0}] !'.format(
-                variables['crawler_cache_dir_index']))
-
-
-def process_demo(args, config):
-    demo_from_scratch_flag = True
-
-    while True:
-        with open(args.var_file, 'r', encoding='utf-8') as var_json:
-            variables = json.load(var_json)
-        # nothing to update
-        if variables['crawler_cache_dir_index'] < variables['cache_dir_index']:
-            print('Nothing to update!')
-            sleep(args.sleep_time)
-        # invalid update step
-        elif variables['crawler_cache_dir_index'] \
-                > variables['cache_dir_index']:
-            raise Exception('[!] The value of crawler_cache_dir_index \
-                            cannot be higher than cache_dir_index.')
-        else:  # something to update
-            print('Starting updating...')
-            pdf_dir = config['pdf_dir'].format(
-                variables['crawler_cache_dir_index'])
-
-            cmd = 'python main.py --mode process_pdf --pdf_ip {0} --pdf_port {1} --pdf_dir {2} \
-                '.format(args.pdf_ip, args.pdf_port, pdf_dir)
-            os.system(cmd)
-            print('cmd: ', cmd)
-
-            video_dir = config['video_dir'].format(
-                variables['crawler_cache_dir_index'])
-            cmd = 'python main.py --mode process_video --video_dir {0}\
-                '.format(video_dir)
-            os.system(cmd)
-            print('cmd: ', cmd)
-
-            if demo_from_scratch_flag:
-                demo_from_scratch_flag = False
-                cmd = 'python main.py --mode build_indices_local --pdf_ip {0} --pdf_port {1} \
-                    --es_ip {2} --es_port {3} --delete_indices 1 \
-                    --local_mongo_drop_flag 1\
-                    '.format(args.pdf_ip, args.pdf_port,
-                             args.es_ip, args.es_port
-                             )
-                os.system(cmd)
-                print('cmd: ', cmd)
-            else:
-                cmd = 'python main.py --mode build_indices_local --pdf_ip {0} --pdf_port {1} \
-                    --es_ip {2} --es_port {3} --delete_indices 0 \
-                    --local_mongo_drop_flag 0\
-                    '.format(args.pdf_ip, args.pdf_port,
-                             args.es_ip, args.es_port
-                             )
-                os.system(cmd)
-                print('cmd: ', cmd)
-
-            cmd = 'python main.py --mode update_cache_dir_index'
-            os.system(cmd)
-            print('cmd: ', cmd)
-            print('Successfully update dir: [{0}] !'.format(
-                variables['crawler_cache_dir_index']))
 
 
 if __name__ == '__main__':
     """Usage:
-            demo:
+            process:
+                1. python run.py --mode process --pdf_ip PDF_IP --pdf_port PDF_PORT\
+                    --mongodb_service_path SERVICE_PATH --mongodb_service_name SERVICE_NAME\
+                    --mongodb_collection_name COLLECTION_NAME --es_ip ES_IP --es_port ES_PORT
+            from_crawler:
                 1. python run.py --mode init
                 2. python run.py --mode demo --pdf_ip PDF_IP \
                     --pdf_port PDF_PORT --es_ip ES_IP \
@@ -144,22 +173,22 @@ if __name__ == '__main__':
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode",
-                        type=str, default='demo')
+                        type=str, default='process')
     parser.add_argument("--pdf_ip",
                         type=str, default='localhost',
                         help='ip of grobid server')
     parser.add_argument("--pdf_port",
                         type=str, default='8070',
                         help='port of grobid server')
-    parser.add_argument("--remote_from_scratch",
-                        type=int, default=1,
-                        help='whether to update es from scratch')
-    parser.add_argument("--mongodb_ip",
-                        type=str, default='127.0.0.1',
-                        help='ip of mongodb server')
-    parser.add_argument("--mongodb_port",
-                        type=str, default='27017',
-                        help='port of mongodb server')
+    parser.add_argument("--mongodb_service_path",
+                        type=str,
+                        help='path of the mongodb service')
+    parser.add_argument("--mongodb_service_name",
+                        type=str,
+                        help='the service name of the mongodb')
+    parser.add_argument("--mongodb_collection_name",
+                        type=str,
+                        help='the collection name of mongodb')
     parser.add_argument("--es_ip",
                         type=str, default='127.0.0.1',
                         help='ip of es server')
@@ -172,19 +201,23 @@ if __name__ == '__main__':
     parser.add_argument("--config",
                         type=str, default='./config.json',
                         help='path to config file')
-    parser.add_argument("--var_file",
-                        type=str, default='./varFile.json',
-                        help='path to varFile.json')
+    parser.add_argument("--begin_dir_index",
+                        type=int, default=-1,
+                        help='beginning index of the directory in /searcher/data/cache/')
+    parser.add_argument("--end_dir_index",
+                        type=int, default=-1,
+                        help='end index of the directory in /searcher/data/cache/')
+    parser.add_argument("specific_dir_list",
+                        type=str, default='2,3,4,5,6')
 
     args = parser.parse_args()
     with open(args.config, 'r', encoding='utf-8') as config_json:
         config = json.load(config_json)
 
-    if args.mode == 'init':
-        init_variables(args=args)
-    elif args.mode == 'demo':
-        process_demo(args=args, config=config)
-    elif args.mode == 'remote':
-        process(args=args, config=config)
+    if args.mode == 'process':
+        process(args=args)
+    elif args.mode == 'from_crawler':
+        specific_dir_list = [int(n) for n in args.specific_dir_list.split(',')]
+        process(args=args, specific_dir_list=specific_dir_list)
     else:
         raise Exception('[!] Unrecogized action: ', args.mode)

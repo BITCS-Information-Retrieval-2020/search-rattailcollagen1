@@ -11,42 +11,6 @@ import os
 import logging
 logging.basicConfig(level=logging.WARNING)
 
-'''
-def load_mongodb(config):
-    """load mongodb from a json file"""
-    mongodb_path = config['mongodb_path']
-    DBer = DatabaseAccess()
-    DBer.import_json_db(db_path=mongodb_path, drop_flag=True)
-
-    print('load_mongodb: Done!')
-
-
-def connect_remote_mongodb(config, var_file, mongodb_ip, mongodb_port):
-    """connect mongodb server from remote"""
-    mongodb_service_path = 'mongodb://{0}:{1}'.format(mongodb_ip, mongodb_port)
-    mongodb_service_name = config['mongodb_service_name']
-    mongodb_collection_name = config['mongodb_collection_name']
-    mongodb_increment_beginning_pointer \
-        = var_file['mongodb_increment_beginning_pointer']
-    DBer = DatabaseAccess(service_path=mongodb_service_path,
-                          service_name=mongodb_service_name,
-                          collection_name=mongodb_collection_name,
-                          increment_beginning_pointer=mongodb_increment_beginning_pointer)
-
-    print('connect_remote_mongodb: Done!')
-'''
-
-
-def init_var_file(var_file_path, var_file):
-    """initialize the values in varFile.json"""
-    var_file['mongodb_increment_beginning_pointer'] = -1
-    var_file['cache_dir_index'] = 1
-    var_file['crawler_cache_dir_index'] = 0
-    var_file['mongodb_increment_next_pointer'] = -1
-    var_file['next_pointer_list'] = []
-    with open(var_file_path, 'w', encoding='utf-8') as f:
-        json.dump(var_file, f)
-
 
 def process_pdf(pdf_dir, pdf_ip, pdf_port):
     """process pdfs in the pdf_dir"""
@@ -62,65 +26,33 @@ def process_video(video_dir):
     Videoer.video2text(videos_path=video_dir)
 
 
-def build_indices(config, var_file_path, var_file, mongodb_ip,
-                  mongodb_port, pdf_ip, pdf_port, es_ip, es_port,
-                  force_delete=False, connected=False,
-                  local_mongo_drop_flag=True
+def build_indices(config, mongodb_service_path, mongodb_service_name,
+                  mongodb_collection_name, mongodb_beginning_pointer,
+                  mongodb_ending_pointer, pdf_ip, pdf_port, es_ip, es_port,
+                  delete_indices, processed_dir, index_name
                   ):
     """build ES indices using the current mongodb database"""
     batch_size = config['batch_size']
-    cache_dir_index = var_file['cache_dir_index']
-    Dper = DataProcess(connected=connected,
-                       delete_indices=force_delete,
-                       batch_size=batch_size,
-                       config=config,
-                       var_file=var_file,
-                       mongodb_ip=mongodb_ip,
-                       mongodb_port=mongodb_port,
-                       local_mongo_drop_flag=local_mongo_drop_flag,
+    Dper = DataProcess(mongodb_service_path=mongodb_service_path,
+                       mongodb_service_name=mongodb_service_name,
+                       mongodb_collection_name=mongodb_collection_name,
                        es_ip=es_ip,
-                       es_port=es_port)
+                       es_port=es_port,
+                       es_index_name=index_name,
+                       delete_indices=delete_indices,
+                       batch_size=batch_size,
+                       mongodb_beginning_pointer=mongodb_beginning_pointer, 
+                       mongodb_ending_pointer=mongodb_ending_pointer
+                       )
 
-    mongodb_increment_next_pointer = \
-        Dper.process(pdf_ip=pdf_ip,
-                     pdf_port=pdf_port,
-                     cache_dir_index=cache_dir_index)
-
-    # update mongodb_increment_next_pointer
-    # via the last index in this fetch action
-    var_file['mongodb_increment_next_pointer'] = mongodb_increment_next_pointer
-    with open(var_file_path, 'w', encoding='utf-8') as f:
-        json.dump(var_file, f)
+    Dper.process(pdf_ip=pdf_ip, pdf_port=pdf_port, processed_dir=processed_dir)
 
     print('build_indices: Done!')
 
 
-def update_cache_dir_index(var_file_path, var_file):
-    """update cache_dir_index in varFile.json
-        1. Check if the corresponding index dir is in the /data/cache/
-        2. add 1 to the value of cache_dir_index
-    """
-    dir_index = var_file['cache_dir_index']
-    current_file_path = \
-        '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    dir_path = os.path.join(current_file_path,
-                            'searcher', 'data',
-                            'cache', str(dir_index))
-
-    if os.path.exists(dir_path) is not True:
-        raise Exception('File not found: ', dir_path)
-
-    var_file['cache_dir_index'] = dir_index + 1
-    var_file['mongodb_increment_beginning_pointer'] \
-        = var_file['mongodb_increment_next_pointer']
-    var_file['next_pointer_list'].append(var_file['mongodb_increment_next_pointer'])
-    with open(var_file_path, 'w', encoding='utf-8') as f:
-        json.dump(var_file, f)
-
-
-def test_query(config):
+def test_query(config, index_name):
     """check if the elasticsearch can work independently"""
-    esclient = ESClient(ip_port='127.0.0.1:9200', delete=False)
+    esclient = ESClient(ip_port='127.0.0.1:9200', delete=False, index_name=index_name, video_index_name=index_name+'_video')
     query = {
         "type": 1,
         "top_number": 8192,
@@ -141,28 +73,16 @@ def test_query(config):
 
 if __name__ == '__main__':
     """Usage:
-        0. python main.py --mode init_var_file
-        1. python main.py --mode process_pdf --pdf_ip PDF_IP\
-            --pdf_port PDF_PORT --pdf_dir PDF_DIR
-        2. python main.py --mode process_video --video_dir VIDEO_DIR
-        3(first). python main.py --mode build_indices_remote --mongodb_ip MONGODB_IP\
-            --mongodb_port MONGODB_PORT \
-        --pdf_ip PDF_IP --pdf_port PDF_PORT --es_ip ES_IP --es_port ES_PORT\
-            --delete_indices 1
-        3(next). python main.py --mode build_indices_remote --mongodb_ip MONGODB_IP\
-            --mongodb_port MONGODB_PORT \
-        --pdf_ip PDF_IP --pdf_port PDF_PORT --es_ip ES_IP --es_port ES_PORT\
-            --delete_indices 0
-        3_demo(first). python main.py --mode build_indices_local\
-            --pdf_ip PDF_IP --pdf_port PDF_PORT \
-            --es_ip ES_IP --es_port ES_PORT --delete_indices 1\
-            --local_mongo_drop_flag 1
-        3_demo(next). python main.py --mode build_indices_local\
-            --pdf_ip PDF_IP --pdf_port PDF_PORT \
-        --es_ip ES_IP --es_port ES_PORT --delete_indices 0\
-            --local_mongo_drop_flag 0
-        4. python main.py --mode update_cache_dir_index
-        5_test. python main.py --mode test_query
+        1. python main.py --mode process_pdf --pdf_ip {0}\
+            --pdf_port {1} --pdf_dir {2}
+        2. python main.py --mode process_video --video_dir {0}
+        3(first). python main.py --mode build_indices_remote --mongodb_service_path {0}\
+            --mongodb_service_name {1} --mongodb_collection_name {2} --pdf_ip {3} --pdf_port {4}\
+            --es_ip {5} --es_port {6} --delete_indices 1 --processed_dir {7} --index_name {8}
+        3(next). python main.py --mode build_indices_remote --mongodb_service_path {0}\
+            --mongodb_service_name {1} --mongodb_collection_name {2} --pdf_ip {3} --pdf_port {4}\
+            --es_ip {5} --es_port {6} --delete_indices 0 --processed_dir {7} --index_name {8}
+        4_test. python main.py --mode test_query
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode",
@@ -170,9 +90,6 @@ if __name__ == '__main__':
     parser.add_argument("--config",
                         type=str, default='./config.json',
                         help='the path to config.json')
-    parser.add_argument("--var_file",
-                        type=str, default='./varFile.json',
-                        help='store variables')
     parser.add_argument("--pdf_ip",
                         type=str, default='localhost',
                         help='ip of grobid server')
@@ -182,72 +99,63 @@ if __name__ == '__main__':
     parser.add_argument("--pdf_dir",
                         type=str, default='./searcher/data/cache/1/PDFs',
                         help='path to the directory /PDFs')
-    parser.add_argument("--mongodb_ip",
-                        type=str, default='127.0.0.1',
-                        help='ip of mongodb server')
-    parser.add_argument("--mongodb_port",
-                        type=str, default='27017',
-                        help='port of mongodb server')
+    parser.add_argument("--mongodb_service_path",
+                        type=str,
+                        help='path of the mongodb service')
+    parser.add_argument("--mongodb_service_name",
+                        type=str,
+                        help='the service name of the mongodb')
+    parser.add_argument("--mongodb_collection_name",
+                        type=str,
+                        help='the collection name of mongodb')
     parser.add_argument("--delete_indices",
                         type=int, default=0,
                         help='whether to delete es indices')
-    parser.add_argument("--local_mongo_drop_flag",
-                        type=int, default=1,
-                        help='drop local mongodb or not')
     parser.add_argument("--es_ip",
                         type=str, default='127.0.0.1',
                         help='ip of es server')
     parser.add_argument("--es_port",
                         type=str, default='9200',
                         help='ip of es port')
+    parser.add_argument("--processed_dir",
+                        type=str,
+                        help='path to the specific directory: /searcher/data/cache/[number]')
     parser.add_argument("--video_dir",
                         type=str, default='./searcher/data/cache/1/videos',
                         help='path of the director of /videos')
+    parser.add_argument("--index_name",
+                        type=str, default='papers')
     args = parser.parse_args()
 
     with open(args.config, 'r', encoding='utf-8') as config_json:
         config = json.load(config_json)
-    with open(args.var_file, 'r', encoding='utf-8') as var_file_json:
-        var_file = json.load(var_file_json)
 
-    if args.mode == 'init_var_file':
-        init_var_file(var_file_path=args.var_file, var_file=var_file)
-    elif args.mode == 'process_pdf':
+    if args.mode == 'process_pdf':
         process_pdf(pdf_dir=args.pdf_dir,
                     pdf_ip=args.pdf_ip,
                     pdf_port=args.pdf_port)
     elif args.mode == 'process_video':
         process_video(video_dir=args.video_dir)
-    elif args.mode == 'build_indices_local':
-        build_indices(config=config,
-                      var_file_path=args.var_file,
-                      var_file=var_file,
-                      mongodb_ip=args.mongodb_ip,
-                      mongodb_port=args.mongodb_port,
-                      pdf_ip=args.pdf_ip,
-                      pdf_port=args.pdf_port,
-                      force_delete=bool(args.delete_indices),
-                      connected=False,
-                      local_mongo_drop_flag=bool(args.local_mongo_drop_flag),
-                      es_ip=args.es_ip,
-                      es_port=args.es_port)
     elif args.mode == 'build_indices_remote':
+        increment_info_json = os.path.join(args.processed_dir, 'increment_info.json')
+        with open(increment_info_json, 'r', encoding='utf-8') as f:
+            increment_info = json.load(f)
+        mongodb_beginning_pointer = increment_info['begin_id']
+        mongodb_ending_pointer = increment_info['end_id']
         build_indices(config=config,
-                      var_file_path=args.var_file,
-                      var_file=var_file,
-                      mongodb_ip=args.mongodb_ip,
-                      mongodb_port=args.mongodb_port,
+                      mongodb_service_path=args.mongodb_service_path,
+                      mongodb_service_name=args.mongodb_service_name,
+                      mongodb_collection_name=args.mongodb_collection_name,
+                      mongodb_beginning_pointer=mongodb_beginning_pointer,
+                      mongodb_ending_pointer=mongodb_ending_pointer,
                       pdf_ip=args.pdf_ip,
                       pdf_port=args.pdf_port,
-                      force_delete=bool(args.delete_indices),
-                      connected=True,
-                      local_mongo_drop_flag=False,
                       es_ip=args.es_ip,
-                      es_port=args.es_port)
-    elif args.mode == 'update_cache_dir_index':
-        update_cache_dir_index(var_file_path=args.var_file,
-                               var_file=var_file)
+                      es_port=args.es_port,
+                      delete_indices=bool(args.delete_indices),
+                      processed_dir=args.processed_dir,
+                      index_name=args.index_name)
     elif args.mode == 'test_query':
-        test_query(config=config)
+        test_query(config=config, index_name=args.index_name)
     else:
         print('Invaild action!')
