@@ -121,7 +121,7 @@ class ApiClient(object):
         params = deepcopy(params) or {}
         data = data or {}
         files = files or {}
-        #if self.username is not None and self.api_key is not None:
+        # if self.username is not None and self.api_key is not None:
         #    params.update(self.get_credentials())
         r = requests.request(
             method,
