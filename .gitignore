@@ -22,3 +22,5 @@
 /build
 /dist
 /searcher/data/MongoDB
+/searcher/data/XMLs/
+/searcher/data/3/
