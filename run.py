@@ -84,7 +84,7 @@ def process(args, specific_dir_list=None):
     if specific_dir_list is not None:
         recover(args=args, cache_subdirs=specific_dir_list, from_scratch=True)
         print('Finish loading mongodb, name: {0}, dirs: {1}',
-              args.es_index_name + ' : ' + args.es_video_index_name,
+              args.es_index_name + ' : ' + args.es_index_name + '_video',
               specific_dir_list)
         return
     """Will be deleted: end"""
@@ -108,7 +108,10 @@ def process(args, specific_dir_list=None):
         recover(args=args, cache_subdirs=new_cache_subdirs, from_scratch=False)
         for item in new_cache_subdirs:
             set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=1)
-        print('[!] Finish update dirs:{0}'.format(new_cache_subdirs))
+        if new_cache_subdirs != []:
+            print('[!] Finish update dirs:{0}'.format(new_cache_subdirs))
+        else:
+            print('[!] Nothin to update!')
 
 
 def recover(args, cache_subdirs, from_scratch):
@@ -142,18 +145,18 @@ def recover(args, cache_subdirs, from_scratch):
                 '.format(args.mongodb_service_path, args.mongodb_service_name, args.mongodb_collection_name,
                          args.pdf_ip, args.pdf_port,
                          args.es_ip, args.es_port,
-                         subdir, args.index_name
+                         subdir, args.es_index_name
                          )
             os.system(cmd)
             print('cmd: ', cmd)
         else:
             cmd = 'python main.py --mode build_indices_remote --mongodb_service_path {0}\
                 --mongodb_service_name {1} --mongodb_collection_name {2} --pdf_ip {3} --pdf_port {4}\
-                --es_ip {5} --es_port {6} --delete_indices 0 --process_dir {7} --index_name {8}\
+                --es_ip {5} --es_port {6} --delete_indices 0 --processed_dir {7} --index_name {8}\
                 '.format(args.mongodb_service_path, args.mongodb_service_name, args.mongodb_collection_name,
                          args.pdf_ip, args.pdf_port,
                          args.es_ip, args.es_port,
-                         subdir, args.index_name
+                         subdir, args.es_index_name
                          )
             os.system(cmd)
             print('cmd: ', cmd)
@@ -207,8 +210,12 @@ if __name__ == '__main__':
     parser.add_argument("--end_dir_index",
                         type=int, default=-1,
                         help='end index of the directory in /searcher/data/cache/')
-    parser.add_argument("specific_dir_list",
-                        type=str, default='2,3,4,5,6')
+    parser.add_argument("--specific_dir_list",
+                        type=str, default='2,3,4,5,6',
+                        help='end index of the directory in /searcher/data/cache/')
+    parser.add_argument("--es_index_name",
+                        type=str, default='papers',
+                        help='the name of es index')
 
     args = parser.parse_args()
     with open(args.config, 'r', encoding='utf-8') as config_json:

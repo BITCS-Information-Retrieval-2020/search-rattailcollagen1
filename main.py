@@ -52,7 +52,7 @@ def build_indices(config, mongodb_service_path, mongodb_service_name,
 
 def test_query(config, index_name):
     """check if the elasticsearch can work independently"""
-    esclient = ESClient(ip_port='127.0.0.1:9200', delete=False, index_name=index_name, video_index_name=index_name+'_video')
+    esclient = ESClient(ip_port='127.0.0.1:9200', delete=False, index_name=index_name, video_index_name=index_name + '_video')
     query = {
         "type": 1,
         "top_number": 8192,
