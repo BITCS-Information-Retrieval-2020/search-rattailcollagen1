@@ -34,7 +34,7 @@
 | DownloadServer |    3     | 公培元 |
 
 ## Installation
-### Install
+### Pip install
 Our Python package is [here](https://pypi.org/project/ScienceSearcher/1.0.1/).
 ```shell
 # Pip install the stable version of our package
