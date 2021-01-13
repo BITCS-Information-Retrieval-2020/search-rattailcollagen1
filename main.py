@@ -1,10 +1,10 @@
 """Create the index from the data crawled"""
 
-from searcher.DataProcess import DataProcess
-# from searcher.DatabaseAccess import DatabaseAccess
-from searcher.ESClient import ESClient
-from searcher.PDFProcessor import PDFProcessor
-from searcher.VideoProcessor import VideoProcessor
+from ScienceSearcher.DataProcess import DataProcess
+# from ScienceSearcher.DatabaseAccess import DatabaseAccess
+from ScienceSearcher.ESClient import ESClient
+from ScienceSearcher.PDFProcessor import PDFProcessor
+from ScienceSearcher.VideoProcessor import VideoProcessor
 import argparse
 import json
 import os
@@ -97,7 +97,7 @@ if __name__ == '__main__':
                         type=str, default='8070',
                         help='port of grobid server')
     parser.add_argument("--pdf_dir",
-                        type=str, default='./searcher/data/cache/1/PDFs',
+                        type=str, default='./ScienceSearcher/data/cache/1/PDFs',
                         help='path to the directory /PDFs')
     parser.add_argument("--mongodb_service_path",
                         type=str,
@@ -119,9 +119,9 @@ if __name__ == '__main__':
                         help='ip of es port')
     parser.add_argument("--processed_dir",
                         type=str,
-                        help='path to the specific directory: /searcher/data/cache/[number]')
+                        help='path to the specific directory: /ScienceSearcher/data/cache/[number]')
     parser.add_argument("--video_dir",
-                        type=str, default='./searcher/data/cache/1/videos',
+                        type=str, default='./ScienceSearcher/data/cache/1/videos',
                         help='path of the director of /videos')
     parser.add_argument("--index_name",
                         type=str, default='papers')

@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name="searcher",
+    name="ScienceSearcher",
     version="1.0.1",
     author="RatTailCollagen1",
     author_email="815398117@qq.com",

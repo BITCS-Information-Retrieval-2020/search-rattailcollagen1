@@ -18,7 +18,7 @@
 /searcher/data/videos/
 /varFile.json
 /*.bk/
-/searcher.egg-info
+/ScienceSearcher.egg-info
 /build
 /dist
 /searcher/data/MongoDB

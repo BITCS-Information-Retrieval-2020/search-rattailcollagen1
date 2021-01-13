@@ -6,9 +6,9 @@ import json
 
 
 def check_dir_updated(dir_idx):
-    """check if the /searcher/cache/[number] dir is updated"""
+    """check if the /ScienceSearcher/cache/[number] dir is updated"""
     cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    cache_dir = cur_file_path + '/searcher/data/cache/'
+    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
     increment_info_json = os.path.join(cache_dir, str(dir_idx), 'updated.json')
 
     if os.path.exists(increment_info_json):
@@ -27,7 +27,7 @@ def set_processed_or_not(begin_dir_index, end_dir_index, set_updated_or_not):
     begin_idx = begin_dir_index
     end_idx = end_dir_index
     cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    cache_dir = cur_file_path + '/searcher/data/cache/'
+    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
     cache_files = os.listdir(cache_dir)
     cache_subdirs = []
     for item in cache_files:
@@ -55,7 +55,7 @@ def set_processed_or_not(begin_dir_index, end_dir_index, set_updated_or_not):
 def find_unprocessed_dir():
     """find all the unprocessed dirs"""
     cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    cache_dir = cur_file_path + '/searcher/data/cache/'
+    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
     cache_files = os.listdir(cache_dir)
     cache_subdirs = []
 
@@ -71,10 +71,10 @@ def find_unprocessed_dir():
 
 def process(args, specific_dir_list=None):
     """tell function 'recovery' which directory need to be processed """
-    """check if there is new directory in /searcher/data/cache/"""
-    # 遍历/searcher/data/cache/下的当前所有带标号的文件夹
+    """check if there is new directory in /ScienceSearcher/data/cache/"""
+    # 遍历/ScienceSearcher/data/cache/下的当前所有带标号的文件夹
     cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    cache_dir = cur_file_path + '/searcher/data/cache/'
+    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
     cache_files = os.listdir(cache_dir)
     cache_subdirs = []
 
@@ -118,7 +118,7 @@ def recover(args, cache_subdirs, from_scratch):
     """Recover information if the local es system crashed"""
 
     cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    cache_dir = cur_file_path + '/searcher/data/cache/'
+    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
 
     # 对于遍历到的每一个文件夹，首先调用PDFProcessor和VideoProcessor来处理这里的所有pdfs和videos
     for item in cache_subdirs:
@@ -206,13 +206,13 @@ if __name__ == '__main__':
                         help='path to config file')
     parser.add_argument("--begin_dir_index",
                         type=int, default=-1,
-                        help='beginning index of the directory in /searcher/data/cache/')
+                        help='beginning index of the directory in /ScienceSearcher/data/cache/')
     parser.add_argument("--end_dir_index",
                         type=int, default=-1,
-                        help='end index of the directory in /searcher/data/cache/')
+                        help='end index of the directory in /ScienceSearcher/data/cache/')
     parser.add_argument("--specific_dir_list",
                         type=str, default='2,3,4,5,6',
-                        help='end index of the directory in /searcher/data/cache/')
+                        help='end index of the directory in /ScienceSearcher/data/cache/')
     parser.add_argument("--es_index_name",
                         type=str, default='papers',
                         help='the name of es index')

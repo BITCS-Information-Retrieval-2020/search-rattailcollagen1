@@ -1,4 +1,4 @@
-from searcher.SearchEngine import SearchEngine
+from ScienceSearcher.SearchEngine import SearchEngine
 
 # initialization
 se = SearchEngine(download_server_ip='xxx.xxx.xxx.xxx',

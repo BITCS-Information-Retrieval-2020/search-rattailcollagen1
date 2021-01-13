@@ -1,5 +1,5 @@
-from searcher.DownloadClient import DownloadClient
-from searcher.ESClient import ESClient
+from ScienceSearcher.DownloadClient import DownloadClient
+from ScienceSearcher.ESClient import ESClient
 import threading
 import os
 import re

@@ -34,13 +34,20 @@
 | DownloadServer |    3     | 公培元 |
 
 ## Installation
+### Install
+Our Python package is [here](https://pypi.org/project/ScienceSearcher/1.0.1/).
 ```shell
-# Clone our repository first
+# Pip install the stable version of our package
+pip install ScienceSearcher -i https://pypi.python.org/simple
+```
+### Get the latest version
+```shell
+# If you want to obtain the latest version of our package, please clone the repository
 git clone https://github.com/BITCS-Information-Retrieval-2020/search-rattailcollagen1.git
 cd search-rattailcollagen1
-# Make sure we have up-to-date versions of dependencies
+# Make sure you have the versions of dependencies in requirements.txt
 pip install -r requirements.txt
 python setup.py install
 ```
-## Using the package in your Python
+## Use the package in your Python
 Please see `example.py`.
