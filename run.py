@@ -77,6 +77,7 @@ def process(args, specific_dir_list=None):
     cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
     cache_files = os.listdir(cache_dir)
     cache_subdirs = []
+    from_scratch = True
 
     # the following if condition is just for the two crawler groups
     # it will be deleted later
@@ -97,16 +98,18 @@ def process(args, specific_dir_list=None):
             cache_subdirs.append(item)
             set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=0)
 
-    recover(args=args, cache_subdirs=cache_subdirs, from_scratch=True)
+    recover(args=args, cache_subdirs=cache_subdirs, from_scratch=from_scratch)
     for item in cache_subdirs:
+        from_scratch = False
         set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=1)
 
     while True:
         sleep(32)
         print('[!] Starting update...')
         new_cache_subdirs = find_unprocessed_dir()
-        recover(args=args, cache_subdirs=new_cache_subdirs, from_scratch=False)
+        recover(args=args, cache_subdirs=new_cache_subdirs, from_scratch=from_scratch)
         for item in new_cache_subdirs:
+            from_scratch = False
             set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=1)
         if new_cache_subdirs != []:
             print('[!] Finish update dirs:{0}'.format(new_cache_subdirs))
