@@ -39,6 +39,8 @@ class SearchEngine:
         t = threading.Thread(target=self.es.get_all_title, args=(self.titles,))
         t.setDaemon(True)
         t.start()
+        while not self.titles:
+            sleep(1)
 
     def search(self, query):
         """
@@ -79,7 +81,11 @@ class SearchEngine:
         return res
 
     def search_by_id(self, id_):
-        res = self.es.search_by_id(id_)
+        try:
+            res = self.es.search_by_id(id_)
+        except BaseException as e:
+            print("id doesn't exist")
+            return {}
         abs_dirname = os.path.dirname(os.path.abspath(__file__))
         res["pdfPath"] = abs_dirname + res["pdfPath"]
         res["videoPath"] = abs_dirname + res["videoPath"]
