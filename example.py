@@ -21,4 +21,3 @@ res = se.search_by_id(id)
 # auto-complete
 query = "xxx"
 res = se.auto_complete(query)
-

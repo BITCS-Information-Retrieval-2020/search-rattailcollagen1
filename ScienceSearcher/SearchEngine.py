@@ -84,6 +84,7 @@ class SearchEngine:
         try:
             res = self.es.search_by_id(id_)
         except BaseException as e:
+            print(e)
             print("id doesn't exist")
             return {}
         abs_dirname = os.path.dirname(os.path.abspath(__file__))

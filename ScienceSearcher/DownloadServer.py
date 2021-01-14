@@ -6,7 +6,6 @@ import os
 import zipfile
 from flask import Flask
 from flask import request
-from time import sleep
 
 MAX_LENGTH = 1024
 
@@ -52,7 +51,7 @@ class DownloadServer:
             print(e)
             sys.exit(1)
         s.connect((client_ip, client_port))
-        fileinfo_size = struct.calcsize('128sl')
+        # fileinfo_size = struct.calcsize('128sl')
         file_head = struct.pack('128sl',
                                 os.path.basename(self.compressed_path).encode('utf-8'),
                                 os.stat(self.compressed_path).st_size)
@@ -92,6 +91,7 @@ def download():
 @app.route('/test')
 def test():
     return "test"
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
