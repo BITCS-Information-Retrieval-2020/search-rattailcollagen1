@@ -10,10 +10,10 @@ import threading
 
 
 class DownloadClient:
-    def __init__(self, ip, port):
+    def __init__(self, ip, port, group_name):
         self.ip = ip
         self.port = port
-        self.data_path = os.path.dirname(os.path.abspath(__file__)) + '/data/cache'
+        self.data_path = os.path.dirname(os.path.abspath(__file__)) + '/data/cache/' + group_name
         print(self.data_path)
         self.compressed_path = self.data_path + '/to_send.zip'
         print(self.data_path)
