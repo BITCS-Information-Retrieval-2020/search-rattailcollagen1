@@ -5,10 +5,10 @@ import os
 import json
 
 
-def check_dir_updated(dir_idx):
+def check_dir_updated(dir_idx, cache_name):
     """check if the /ScienceSearcher/cache/[number] dir is updated"""
     cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
+    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/' + cache_name
     increment_info_json = os.path.join(cache_dir, str(dir_idx), 'updated.json')
 
     if os.path.exists(increment_info_json):
@@ -22,12 +22,12 @@ def check_dir_updated(dir_idx):
         return False
 
 
-def set_processed_or_not(begin_dir_index, end_dir_index, set_updated_or_not):
+def set_processed_or_not(begin_dir_index, end_dir_index, set_updated_or_not, cache_name):
     """To set which directory to be unchanged/changed"""
     begin_idx = begin_dir_index
     end_idx = end_dir_index
     cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
+    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/' + cache_name
     cache_files = os.listdir(cache_dir)
     cache_subdirs = []
     for item in cache_files:
@@ -52,19 +52,19 @@ def set_processed_or_not(begin_dir_index, end_dir_index, set_updated_or_not):
             json.dump(cur_dict, f)
 
 
-def find_unprocessed_dir():
+def find_unprocessed_dir(cache_name):
     """find all the unprocessed dirs"""
     cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
+    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/' + cache_name
     cache_files = os.listdir(cache_dir)
     cache_subdirs = []
 
     for item in cache_files:
         item_path = os.path.join(cache_dir, item)
-        if os.path.isdir(item_path) and not check_dir_updated(dir_idx=item):
+        if os.path.isdir(item_path) and not check_dir_updated(dir_idx=item, cache_name=cache_name):
             item = int(item)
             cache_subdirs.append(item)
-            set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=0)
+            set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=0, cache_name=cache_name)
 
     return cache_subdirs
 
@@ -74,7 +74,9 @@ def process(args, specific_dir_list=None):
     """check if there is new directory in /ScienceSearcher/data/cache/"""
     # 遍历/ScienceSearcher/data/cache/下的当前所有带标号的文件夹
     cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
+    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/' + args.cache_name
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
     cache_files = os.listdir(cache_dir)
     cache_subdirs = []
     from_scratch = True
@@ -96,21 +98,21 @@ def process(args, specific_dir_list=None):
         if os.path.isdir(item_path):
             item = int(item)
             cache_subdirs.append(item)
-            set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=0)
+            set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=0, cache_name=args.cache_name)
 
     recover(args=args, cache_subdirs=cache_subdirs, from_scratch=from_scratch)
     for item in cache_subdirs:
         from_scratch = False
-        set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=1)
+        set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=1, cache_name=args.cache_name)
 
     while True:
         sleep(32)
         print('[!] Starting update...')
-        new_cache_subdirs = find_unprocessed_dir()
+        new_cache_subdirs = find_unprocessed_dir(cache_name=args.cache_name)
         recover(args=args, cache_subdirs=new_cache_subdirs, from_scratch=from_scratch)
         for item in new_cache_subdirs:
             from_scratch = False
-            set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=1)
+            set_processed_or_not(begin_dir_index=item, end_dir_index=item, set_updated_or_not=1, cache_name=args.cache_name)
         if new_cache_subdirs != []:
             print('[!] Finish update dirs:{0}'.format(new_cache_subdirs))
         else:
@@ -121,7 +123,7 @@ def recover(args, cache_subdirs, from_scratch):
     """Recover information if the local es system crashed"""
 
     cur_file_path = '/'.join(os.path.split(os.path.realpath(__file__))[0].split('\\'))
-    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/'
+    cache_dir = cur_file_path + '/ScienceSearcher/data/cache/' + args.cache_name
 
     # 对于遍历到的每一个文件夹，首先调用PDFProcessor和VideoProcessor来处理这里的所有pdfs和videos
     for item in cache_subdirs:
@@ -209,16 +211,19 @@ if __name__ == '__main__':
                         help='path to config file')
     parser.add_argument("--begin_dir_index",
                         type=int, default=-1,
-                        help='beginning index of the directory in /ScienceSearcher/data/cache/')
+                        help='beginning index of the directory in /ScienceSearcher/data/cache/[cache_name]')
     parser.add_argument("--end_dir_index",
                         type=int, default=-1,
-                        help='end index of the directory in /ScienceSearcher/data/cache/')
+                        help='end index of the directory in /ScienceSearcher/data/cache/[cache_name]')
     parser.add_argument("--specific_dir_list",
                         type=str, default='2,3,4,5,6',
-                        help='end index of the directory in /ScienceSearcher/data/cache/')
+                        help='end index of the directory in /ScienceSearcher/data/cache/[cache_name]')
     parser.add_argument("--es_index_name",
                         type=str, default='papers',
                         help='the name of es index')
+    parser.add_argument("--cache_name",
+                        type=str, default='demo',
+                        help='the name of cache directory: /ScienceSearcher/data/cache/[cache_name]')
 
     args = parser.parse_args()
     with open(args.config, 'r', encoding='utf-8') as config_json:

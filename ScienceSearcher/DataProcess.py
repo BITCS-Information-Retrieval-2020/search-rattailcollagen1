@@ -59,6 +59,7 @@ class DataProcess:
         if processed_dir[-1] == '\\' or processed_dir[-1] == '/':
             processed_dir = processed_dir[:-1]
         cache_dir_index = int(re.split('/|\\\\', processed_dir)[-1])
+        cache_name = re.split('/|\\\\', processed_dir)[-2]
         while True:
             """Iteratively fetch data from MongoDB"""
             dataFromDB = self.DBer.read_batch(batch_size=self.batchSize)
@@ -80,10 +81,11 @@ class DataProcess:
                     item['videoPath'] = item['videoPath'][6:]
 
                 if item['pdfPath'] != "":
-                    item['pdfPath'] = '/'.join(os.path.join('/data/cache', str(cache_dir_index), item['pdfPath']).split('\\'))
+                    item['pdfPath'] = '/'.join(
+                        os.path.join('/data/cache', cache_name, str(cache_dir_index), item['pdfPath']).split('\\'))
                 if item['videoPath'] != "":
                     item['videoPath'] = \
-                        '/'.join(os.path.join('/data/cache', str(cache_dir_index), item['videoPath']).split('\\'))
+                        '/'.join(os.path.join('/data/cache', cache_name, str(cache_dir_index), item['videoPath']).split('\\'))
                 itemToESClient = item.copy()
 
                 pdfPath = item['pdfPath']
