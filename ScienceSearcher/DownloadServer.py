@@ -34,8 +34,8 @@ class DownloadServer:
 
     def compress(self, client_max_dir, server_max_dir):
         z = zipfile.ZipFile(self.compressed_path, 'w')
-        for i in range(client_max_dir+1, server_max_dir+1):
-            sub_path = self.data_path+'/'+str(i)
+        for i in range(client_max_dir + 1, server_max_dir + 1):
+            sub_path = self.data_path + '/' + str(i)
             z.write(sub_path, str(i))
             for path, sub_dir, files in os.walk(sub_path):
                 relative_path = path.replace(sub_path, str(i))
