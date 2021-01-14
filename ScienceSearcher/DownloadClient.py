@@ -86,7 +86,7 @@ class DownloadClient:
                             received_size += 4
                         received_size += len(data)
                     else:
-                        data = conn.recv(file_size-received_size)
+                        data = conn.recv(file_size - received_size)
                         if strip_flag:
                             data = data.lstrip(b'\00\00\00\00')
                             strip_flag = False
