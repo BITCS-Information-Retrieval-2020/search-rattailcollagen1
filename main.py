@@ -12,11 +12,11 @@ import logging
 logging.basicConfig(level=logging.WARNING)
 
 
-def process_pdf(pdf_dir, pdf_ip, pdf_port):
+def process_pdf(pdf_dir, pdf_ip, pdf_port, pdf_n_threads):
     """process pdfs in the pdf_dir"""
     PDFer = PDFProcessor()
     # pdf_dir = config['pdf_dir']
-    PDFer.PDFtoXML(server=pdf_ip, port=pdf_port, pdf_dir=pdf_dir)
+    PDFer.PDFtoXML(server=pdf_ip, port=pdf_port, pdf_dir=pdf_dir, n_threads=pdf_n_threads)
 
 
 def process_video(video_dir):
@@ -133,7 +133,8 @@ if __name__ == '__main__':
     if args.mode == 'process_pdf':
         process_pdf(pdf_dir=args.pdf_dir,
                     pdf_ip=args.pdf_ip,
-                    pdf_port=args.pdf_port)
+                    pdf_port=args.pdf_port,
+                    pdf_n_threads=config['pdf_n_threads'])
     elif args.mode == 'process_video':
         process_video(video_dir=args.video_dir)
     elif args.mode == 'build_indices_remote':
