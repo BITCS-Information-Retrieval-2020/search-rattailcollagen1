@@ -31,7 +31,7 @@ class DownloadClient:
         print("client max dir:{}".format(sub_dir))
         return int(sub_dir)
 
-    def send(self, ip, port):
+    def send(self, ip, port, send_flag):
         while True:
             url = 'http://{}:{}/download'.format(ip, port)
             pc_name = socket.getfqdn(socket.gethostname())
@@ -42,9 +42,10 @@ class DownloadClient:
                       "port": self.port}
             res = requests.get(url, params=params)
             res = json.loads(res.text)
-            send_flag = int(res['send_flag'])
-            if send_flag:
+            send_flag[0] = int(res['send_flag'])
+            if send_flag[0]:
                 self.receive()
+                send_flag[0] = False
             else:
                 print("no file to receive")
                 pass

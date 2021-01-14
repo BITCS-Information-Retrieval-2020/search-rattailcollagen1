@@ -1,5 +1,6 @@
 from ScienceSearcher.DownloadClient import DownloadClient
 from ScienceSearcher.ESClient import ESClient
+from time import sleep
 import threading
 import os
 import re
@@ -22,11 +23,17 @@ class SearchEngine:
         self.client = DownloadClient(download_client_ip, download_client_port)
         self.es = ESClient([{"host": es_ip, "port": es_port}], index_name=index_name, video_index_name=video_index_name)
         self.titles = []
+        self.send_flag = [False]
 
         # thread for update data
-        t = threading.Thread(target=self.client.send, args=(download_server_ip, download_server_port))
+        t = threading.Thread(target=self.client.send, args=(download_server_ip, download_server_port, self.send_flag))
         t.setDaemon(True)
         t.start()
+        sleep(1)
+        if self.send_flag[0]:
+            print("receiving data, please don't stop the process until \"receiving end\" appears in terminal")
+            while self.send_flag[0]:
+                sleep(1)
 
         # thread for update title list
         t = threading.Thread(target=self.es.get_all_title, args=(self.titles,))
@@ -74,7 +81,6 @@ class SearchEngine:
     def search_by_id(self, id_):
         res = self.es.search_by_id(id_)
         abs_dirname = os.path.dirname(os.path.abspath(__file__))
-        for item in res:
-            item["pdfPath"] = abs_dirname + item["pdfPath"]
-            item["videoPath"] = abs_dirname + item["videoPath"]
+        res["pdfPath"] = abs_dirname + res["pdfPath"]
+        res["videoPath"] = abs_dirname + res["videoPath"]
         return res
