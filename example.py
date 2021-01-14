@@ -8,7 +8,8 @@ se = SearchEngine(download_server_ip='xxx.xxx.xxx.xxx',
                   es_ip='xxx.xxx.xxx.xxx',
                   es_port=9200,
                   index_name='xxx',
-                  video_index_name='xxx')
+                  video_index_name='xxx',
+                  group_name='xxx')
 
 # search
 query = {}
