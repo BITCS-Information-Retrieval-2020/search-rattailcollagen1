@@ -19,7 +19,7 @@ class PDFProcessor:
         self.currentPath = '/'.join(os.path.split(
             os.path.realpath(__file__))[0].split('\\'))
 
-    def PDFtoXML(self, server, port, pdf_dir):
+    def PDFtoXML(self, server, port, pdf_dir, n_threads=10):
         # xml_dir = f'{self.currentPath}/data/XMLs'
         if os.path.basename(pdf_dir) == '':
             xml_dir = os.path.join(os.path.dirname(
@@ -32,7 +32,7 @@ class PDFProcessor:
         client = grobid.grobid_client(
             config_path=f'{self.currentPath}/grobid_client/config.json', grobid_server=server, grobid_port=port)
         client.process("processFulltextDocument", input_path=pdf_dir, output=xml_dir,
-                       consolidate_citations=True, teiCoordinates=True, force=False)
+                       consolidate_citations=True, teiCoordinates=True, force=False, n=n_threads)
 
     @staticmethod
     def parsexml(self, xml_path):
