@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name="ScienceSearcher",
-    version="1.0.2",
+    version="1.0.3",
     author="RatTailCollagen1",
     author_email="815398117@qq.com",
     description="an IR system for scientific research papers",
