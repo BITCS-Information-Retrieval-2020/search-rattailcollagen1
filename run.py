@@ -132,12 +132,12 @@ def recover(args, cache_subdirs, from_scratch):
         pdf_dir = os.path.join(subdir, 'PDFs')
         cmd = 'python main.py --mode process_pdf --pdf_ip {0} --pdf_port {1} --pdf_dir {2} \
                 '.format(args.pdf_ip, args.pdf_port, pdf_dir)
-        os.system(cmd)
+        # os.system(cmd)
         print('cmd: ', cmd)
 
         video_dir = os.path.join(subdir, 'videos')
         cmd = 'python main.py --mode process_video --video_dir {0}'.format(video_dir)
-        os.system(cmd)
+        # os.system(cmd)
         print('cmd: ', cmd)
 
     # 先把from_scratch设置成true，然后进行第一遍更新indices

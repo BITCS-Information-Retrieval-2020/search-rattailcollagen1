@@ -72,11 +72,11 @@ class DataProcess:
                 # mongodb_increment_next_pointer = max(mongodb_increment_next_pointer, item['_id'])
                 # print('_id: ', str(item['_id']))
                 if item['pdfPath'] != "" and item['pdfPath'][0] == '.':
-                    del item['pdfPath'][0]
+                    item['pdfPath'] = item['pdfPath'][1:]
                 if item['pdfPath'] != "" and item['pdfPath'][0:6] == "/data/":
                     item['pdfPath'] = item['pdfPath'][6:]
                 if item['videoPath'] != "" and item['videoPath'][0] == '.':
-                    del item['videoPath'][0]
+                    item['videoPath'] = item['videoPath'][1:]
                 if item['videoPath'] != "" and item['videoPath'][0:6] == "/data/":
                     item['videoPath'] = item['videoPath'][6:]
 
@@ -98,14 +98,28 @@ class DataProcess:
                 print('video_path: ', video_path)
                 """Convert the corresponding pdf file and video file to the specific forms"""
                 if pdfPath != "":
-                    pdfText = self.PDFer.convert(server=pdf_ip, port=pdf_port, pdf_path=pdf_path)
-                    itemToESClient['pdfText'] = pdfText
+                    try:
+                        pdfText = self.PDFer.convert(server=pdf_ip, port=pdf_port, pdf_path=pdf_path)
+                    except Exception as e:
+                        print('Error: ', e)
+                        itemToESClient['pdfText'] = ""
+                    else:
+                        itemToESClient['pdfText'] = pdfText
+                    if itemToESClient['pdfText'] == "":
+                        itemToESClient['pdfPath'] = ""
                 else:
                     itemToESClient['pdfText'] = ""
 
                 if videoPath != "":
-                    videoStruct = self.Videoer.convert(video_path=video_path)
-                    itemToESClient['videoStruct'] = videoStruct
+                    try:
+                        videoStruct = self.Videoer.convert(video_path=video_path)
+                    except Exception as e:
+                        print('Error: ', e)
+                        itemToESClient['videoStruct'] = []
+                    else:
+                        itemToESClient['videoStruct'] = videoStruct
+                    if itemToESClient['videoStruct'] == []:
+                        itemToESClient['videoPath'] = ""
                 else:
                     itemToESClient['videoStruct'] = []
 
