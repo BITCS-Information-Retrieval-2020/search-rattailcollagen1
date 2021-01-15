@@ -1,11 +1,5 @@
 from elasticsearch import Elasticsearch, helpers
-import ipdb
-import json
-import pprint
-import logging
-import math
-from time import sleep
-
+import ipdb, random, time, json, pprint, logging
 
 class ESClient:
 
@@ -60,18 +54,13 @@ class ESClient:
         }
         # if not exist, create the index
         if delete:
-            if self.es.indices.exists(index=self.index_name):
-                self.es.indices.delete(index=self.index_name)
-                print(f'[!] delete index: {self.index_name}')
-            if self.es.indices.exists(index=self.video_index_name):
-                self.es.indices.delete(index=self.video_index_name)
-                print(f'[!] delete index: {self.video_index_name}')
+            self.es.indices.delete(index=self.index_name)
+            self.es.indices.delete(index=self.video_index_name)
         if not self.es.indices.exists(index=self.index_name):
             self.es.indices.create(index=self.index_name)
             self.es.indices.put_mapping(body=self.mapping, index=self.index_name)
             print(f'[!] create index: {self.index_name}')
-
-        if not self.es.indices.exists(index=self.video_index_name):
+            
             self.es.indices.create(index=self.video_index_name)
             self.es.indices.put_mapping(body=self.mapping_vs, index=self.video_index_name)
             print(f'[!] create index: {self.video_index_name}')
@@ -94,7 +83,8 @@ class ESClient:
                 },
             }
         )
-
+        # print(f'[!] init ESClient successfully')
+    
     def update_index(self, data, batch_size):
         '''
             建立索引，返回是否成功。
@@ -106,7 +96,7 @@ class ESClient:
 
         '''
         try:
-            # count_paper = self.es.count(index=self.index_name)['count']
+            count_paper = self.es.count(index=self.index_name)['count']
             count_video = self.es.count(index=self.video_index_name)['count']
             actions = []
             for i, item in enumerate(data):
@@ -120,13 +110,13 @@ class ESClient:
                         'videoPath': item['videoPath'],
                         '_index': self.video_index_name,
                         '_id': count_video,
-                        'paper_id': item['_id'],
+                        'paper_id': count_paper + i
                     })
                     count_video += 1
-
+                
                 # paper index
                 item['_index'] = self.index_name
-                item['_id'] = item['_id']
+                item['_id'] = count_paper + i
                 item.pop('videoStruct')
                 actions.append(item)
             helpers.bulk(self.es, actions)
@@ -154,7 +144,7 @@ class ESClient:
         except Exception as e:
             logging.info(f'[!] search failed: {e}')
             return []
-
+        
     def search_by_id(self, id_):
         dsl = {
             'query': {
@@ -165,13 +155,9 @@ class ESClient:
             index=self.index_name,
             body=dsl
         )
-        # rest = [h['_source'] for h in hits['hits']['hits']]
-        rest = []
-        for h in hits['hits']['hits']:
-            h['_source']['_id'] = h['_id']
-            rest.append(h['_source'])
+        rest = [h['_source'] for h in hits['hits']['hits']]
         return rest[0]
-
+        
     def search_mode_1(self, query_text, topn):
         dsl = {
             'query': {
@@ -184,13 +170,9 @@ class ESClient:
             body=dsl,
             size=topn
         )
-        # rest = [h['_source'] for h in hits['hits']['hits']]
-        rest = []
-        for h in hits['hits']['hits']:
-            h['_source']['_id'] = h['_id']
-            rest.append(h['_source'])
+        rest = [h['_source'] for h in hits['hits']['hits']]
         return rest
-
+        
     def search_mode_2(self, query, operator, topn):
         bool_ = {'must': [], 'must_not': [], 'should': []}
         for (key, value), op in zip(query.items(), operator):
@@ -199,10 +181,7 @@ class ESClient:
                 for v in value:
                     bool_['should'].append({"wildcard": {key: f'*{v}*'}})
             elif op == 'AND':
-                value = value.strip().split()
-                for v in value:
-                    bool_['must'].append({"wildcard": {key: f'*{v}*'}})
-                # bool_['must'].append({"match": {key: value}})
+                bool_['must'].append({"match": {key: value}})
             elif op == 'NOT':
                 bool_['must_not'].append({"match": {key: value}})
             elif not op:
@@ -218,13 +197,9 @@ class ESClient:
             body=dsl,
             size=topn,
         )
-        # rest = [h['_source'] for h in hits['hits']['hits']]
-        rest = []
-        for h in hits['hits']['hits']:
-            h['_source']['_id'] = h['_id']
-            rest.append(h['_source'])
+        rest = [h['_source'] for h in hits['hits']['hits']]
         return rest
-
+    
     def search_mode_3(self, query_text, topn):
         value = query_text.strip().split()
         dsl = {
@@ -244,51 +219,19 @@ class ESClient:
         )
         rest = [h['_source'] for h in hits['hits']['hits']]
         return rest
-
-    def get_all_title(self, titles):
-        while True:
-            body = {
-                "_source": ["title"],
-                "query": {
-                    "match_all": {}
-                }
-            }
-            scroll = '5m'
-            size = 1000
-            res = self.es.search(
-                index=self.index_name,
-                scroll=scroll,
-                size=size,
-                body=body
-            )
-            all_data = res.get("hits").get("hits")
-            scroll_id = res["_scroll_id"]
-            total = res["hits"]["total"]["value"]
-            for i in range(math.ceil(total / size)):
-                res = self.es.scroll(scroll_id=scroll_id, scroll='5m')
-                all_data += res["hits"]["hits"]
-
-            for item in all_data:
-                cur_title = item['_source']['title']
-                if cur_title not in titles:
-                    titles.append(cur_title)
-            sleep(43200)
-
-
+        
 if __name__ == "__main__":
     # test data
     with open('papers.json', 'rb') as f:
         test_data = json.load(f)
-        for k, i in enumerate(test_data):
-            i['_id'] = k
     esclient = ESClient('10.1.114.121:9200', delete=True)
-
+    
     # create index
     if esclient.update_index(test_data, len(test_data)):
         print('write into ES successfully')
     else:
         print('write into ES failed')
-    sleep(3)
+    time.sleep(3)
     # search
     query1 = {
         "type": 0,
@@ -302,22 +245,23 @@ if __name__ == "__main__":
         "type": 1,
         "top_number": 10,
         "query_text": {
-            "title": "Oral NeurIPS",
+            "title": "Oral NeurIPS Spotlight",
             "authors": "",
             "abstract": "",
             "content": "",
             "year": "",
         },
-        "operator": ["AND", "", "", "", ""]
+        "operator": ["OR", "", "", "", ""]
     }
-    rest = esclient.search(query2)
+    # rest = esclient.search(query2)
     # pprint.pprint(f'rest2[{len(rest)}]: {rest}')
-    print(len(rest))
-    for item in rest:
-        ipdb.set_trace()
+    # print(len(rest))
+    # for item in rest:
+    #     ipdb.set_trace()
+    
     # rest = esclient.search_by_id(0)
     # print(rest)
-    exit()
+    # exit()
 
     query3 = {
         "type": 2,

@@ -84,13 +84,11 @@ class PDFProcessor:
             os.makedirs(xml_dir)
         xml_path = os.path.join(xml_dir, f'{pdf_name}.tei.xml')
         if not os.path.exists(xml_path):
-            print('XML IS NOT FOUND!')
+            print('XML IS NOT FOUND,RETURN EMPTY STRING!')
             print(xml_path)
-            client = grobid.grobid_client(
-                config_path=f'{self.currentPath}/grobid_client/config.json', grobid_server=server, grobid_port=port)
-            client.process("processFulltextDocument", input_path=pdf_path, output=xml_dir,
-                           consolidate_citations=True, teiCoordinates=True, force=False)
-        res = self.parsexml(self, xml_path)
+            res = ''
+        else:
+            res = self.parsexml(self, xml_path)
         return res
 
 
