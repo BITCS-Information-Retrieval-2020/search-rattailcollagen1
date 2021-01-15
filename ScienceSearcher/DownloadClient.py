@@ -13,6 +13,7 @@ class DownloadClient:
     def __init__(self, ip, port, group_name):
         self.ip = ip
         self.port = port
+        self.group_name = group_name
         self.data_path = os.path.dirname(os.path.abspath(__file__)) + '/data/cache/' + group_name
         print(self.data_path)
         self.compressed_path = self.data_path + '/to_send.zip'
@@ -39,7 +40,8 @@ class DownloadClient:
             max_dir = self.find_max()
             params = {"max_dir": max_dir,
                       "ip": pc_ip,
-                      "port": self.port}
+                      "port": self.port,
+                      "group_name": self.group_name}
             res = requests.get(url, params=params)
             res = json.loads(res.text)
             send_flag[0] = int(res['send_flag'])
