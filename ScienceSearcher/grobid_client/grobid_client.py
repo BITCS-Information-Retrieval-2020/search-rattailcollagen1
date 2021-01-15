@@ -10,6 +10,24 @@ import ntpath
 import requests
 
 '''
+Copyright 2019 Patrice Lopez (patrice.lopez@science-miner.com)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+We modify __init__() _load_config process() functions.
+'''
+
+'''
 This version uses the standard ProcessPoolExecutor for parallelizing the concurrent calls to the GROBID services.
 Given the limits of ThreadPoolExecutor (input stored in memory, blocking Executor.map until the whole input
 is acquired), it works with batches of PDF of a size indicated in the config.json file (default is 1000 entries).
