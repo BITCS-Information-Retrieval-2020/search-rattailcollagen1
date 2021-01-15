@@ -48,6 +48,15 @@ class SearchEngine:
         :param query: 展示组发送的查询
         :return: 结果列表
         """
+        if query["type"] == 1:
+            new_query = dict()
+            new_query["title"] = query["query_text"]["title"].lower()
+            new_query["authors"] = query["query_text"]["authors"].lower()
+            new_query["abstract"] = query["query_text"]["abstract"].lower()
+            new_query["pdfText"] = query["query_text"]["content"].lower()
+            new_query["year"] = query["query_text"]["year"].lower()
+            query["query_text"] = new_query
+
         res = self.es.search(query)
         processed_res = []
         abs_dirname = os.path.dirname(os.path.abspath(__file__))

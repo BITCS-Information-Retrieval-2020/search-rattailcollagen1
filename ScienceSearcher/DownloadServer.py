@@ -13,7 +13,7 @@ MAX_LENGTH = 1024
 class DownloadServer:
     def __init__(self):
         self.data_path = os.path.dirname(os.path.abspath(__file__)) + '/data/cache/'
-        #self.compressed_path = self.data_path + '/to_send.zip'
+        # self.compressed_path = self.data_path + '/to_send.zip'
 
     def find_max(self, group_name):
         dir_itr = iter(os.walk(self.data_path + '/' + group_name))
