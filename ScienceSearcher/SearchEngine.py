@@ -31,7 +31,7 @@ class SearchEngine:
         t.start()
         sleep(1)
         if self.send_flag[0]:
-            print("receiving data, please don't stop the process until \"receiving end\" appears in terminal")
+            print("receiving data, please don't stop the process until \"extracting end\" appears in terminal")
             while self.send_flag[0]:
                 sleep(1)
 

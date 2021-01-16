@@ -66,10 +66,10 @@ class DownloadClient:
         print("waiting for receiving...")
         conn, addr = s.accept()
         while True:
-            fileinfo_size = struct.calcsize('128sl')
+            fileinfo_size = struct.calcsize('128sq')
             buf = conn.recv(fileinfo_size)
             if buf:
-                file_name, file_size = struct.unpack('128sl', buf)
+                file_name, file_size = struct.unpack('128sq', buf)
                 file_name = file_name.strip(b'\00')
                 file_name = file_name.decode()
                 print('file name is {}, file size is {}'.format(file_name, file_size))
@@ -100,7 +100,9 @@ class DownloadClient:
             break
         s.close()
         z = zipfile.ZipFile(self.compressed_path, 'r')
+        print("start extracting...")
         z.extractall(self.data_path)
+        print("extracting end")
         z.close()
         os.remove(self.compressed_path)
 

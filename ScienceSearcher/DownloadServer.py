@@ -53,7 +53,7 @@ class DownloadServer:
             sys.exit(1)
         s.connect((client_ip, client_port))
         # fileinfo_size = struct.calcsize('128sl')
-        file_head = struct.pack('128sl',
+        file_head = struct.pack('128sq',
                                 os.path.basename(compressed_path).encode('utf-8'),
                                 os.stat(compressed_path).st_size)
         s.send(file_head)
