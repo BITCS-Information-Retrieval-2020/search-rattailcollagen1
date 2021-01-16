@@ -24,14 +24,14 @@
 
 |   模块   | 编号 |          负责人          | 分工 |
 | :------: | :------: | :----------------------: | :-------: |
-| DatabaseAccess |    0     |       **程赛华**       | ... |
-| DataProcess |    1     |      **聂宇翔**       | ... |
-| PDFProcessor |    1     | 孙凡淑 | ... |
-| VideoProcessor |    1     |   闻子涵          | ... |
-| ESClient |    2     |           **兰天**           | ... |
-| SearchEngine |    3     |     **王昊**     | ... |
-| DownloadClient |    3     | 孔祥宜  | 辅助王昊同学 |
-| DownloadServer |    3     | 公培元 | 辅助王昊同学 |
+| DatabaseAccess |    0     |       **程赛华**       | 与爬虫组协商数据交互，编写DatabaseAccess.py的代码，为组内demo提供MongoDB server以及数据文件 |
+| DataProcess |    1     |      **聂宇翔**       | 设计整体系统架构，与各组协商数据交互，编写DataProcess.py代码，编写整个系统启动pipeline的代码（包括main.py和run.py） |
+| PDFProcessor |    1     | 孙凡淑 | 编写PDFProcessor.py的代码，与Grobid server通信，并抽取PDF中的全文 |
+| VideoProcessor |    1     |   闻子涵          | 编写VideoProcessor.py的代码，贡献了两个百度账号，用于音频识别 |
+| ESClient |    2     |           **兰天**           | 编写ESClient.py代码，负责维护项目中的ES服务 |
+| SearchEngine |    3     |     **王昊**     | 设计整体系统结构，编写SearchEngine.py的代码以及example.py的代码，主要负责编写DownloadClient.py和DownloadServer.py的代码，负责与展示模块协商数据传递方案 |
+| DownloadClient |    3     | 孔祥宜  | 辅助王昊同学编写DownloadClient.py代码 |
+| DownloadServer |    3     | 公培元 | 辅助王昊同学DownloadServer.py代码 |
 
 ## 代码功能说明
 ### DatabaseAccess
