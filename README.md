@@ -163,14 +163,166 @@ se = SearchEngine(download_server_ip='SERVER_IP',
                   index_name='demo_papers',
                   video_index_name='demo_papers_video',
                   group_name='demo')
+                  
+# 全文检索
+query = {
+    "type": 0,
+    "top_number": 10,
+    "query_text": "Regularisation Methods"
+}
+res = se.search(query)
+'''
+限于篇幅，本处只展示top1的部分结果，完整结果请参考模块整体效果部分
+得到的结果为字典类型，此处直接展示出了其键值对
+部分查询结果：
+title:Understanding Regularisation Methods for Continual Learning @ICML CL Workshop
+                                          .
+                                          .
+                                          .
+'''
 
-query = "machine"
-# 查询含有"machine"的标题
+# 高级检索
+query = {
+    "type": 1,
+    "top_number": 1,
+    "query_text": {
+        "title": "",
+        "authors": "Hasib Zunair",
+        "abstract": "",
+        "content": "",
+        "year": ""
+    },
+    "operator": ["", "OR", "", "", ""]
+}
+res = se.search(query)
+'''
+部分查询结果:
+title:MICCAI-PRIME 2020 - Uniformizing Techniques to Process CT scans with 3D CNNs for TB Prediction
+authors:Hasib Zunair
+                                                .
+                                                .
+                                                .
+'''
+
+# 根据内容定位视频
+query = {
+    "type": 2,
+    "top_number": 10,
+    "query_text": "i want"
+}
+res = se.search(query)
+'''
+部分查询结果:
+title:X-Caps: Encoding Visual Attributes in Capsules for Explainable Medical Diagnoses | MICCAI 2020
+                                                 .
+                                                 .
+                                                 .
+videoStruct:[{'timeStart': '00-03-38', 'timeEnd': '00-03-42', 'sentence': 'and if we want our models to be explainable at the human level'}]
+'''
+
+# 根据id进行搜索
+id_ = 0
+res = se.search_by_id(id_)
+'''
+部分查询结果:
+title:Let's Stop Incorrect Comparisons in End-to-end Relation Extraction! (EMNLP 2020)
+                                        .
+                                        .
+                                        .
+_id:0
+'''
+
+# 根据关键词查询标题
+query = "learn"
 res = se.auto_complete(query)
+'''
+查询结果为列表类型，此处直接展示标题
+部分查询结果:
+ICML 2020: Learning De-biased Representations with Biased Representations
+                                      .
+                                      .
+                                      .
+'''
 ```
 
 ### 模块整体效果
-
+本模块的整体功能即为上文客户端使用中所展示的例子，所以效果展示为对应的top1结果的完整内容
+1. 全文检索
+```
+title:Understanding Regularisation Methods for Continual Learning @ICML CL Workshop
+authors:Frederik Benzing
+abstract:
+publicationOrg:ICML
+year:2020
+pdfUrl:https://arxiv.org/pdf/2006.06357.pdf
+pdfPath:G:\search-rattailcollagen1\ScienceSearcher/data/cache/demo/2/PDFs/UnderstandingRegularisationMethodsforContinualLearningICMLCLWorkshop.pdf
+publicationUrl:https://arxiv.org/pdf/2006.06357.pdf
+codeUrl:https://github.com/freedbee/continual_regularisation
+datasetUrl:
+videoUrl:https://www.youtube.com/embed/GHV302OC2Ns
+videoPath:G:\search-rattailcollagen1\ScienceSearcher/data/cache/demo/2/videos/Understanding Regularisation Methods for Continual Learning @ICML CL Workshop.mp4
+pdfText:Despite much progress, there remain many gaps between artificial and biological intelligence. Among ...
+_id:21
+```
+2. 高级检索
+```
+title:MICCAI-PRIME 2020 - Uniformizing Techniques to Process CT scans with 3D CNNs for TB Prediction
+authors:Hasib Zunair
+abstract:
+publicationOrg:MICCAI
+year:2020
+pdfUrl:https://arxiv.org/pdf/2007.13224.pdf
+pdfPath:G:\search-rattailcollagen1\ScienceSearcher/data/cache/demo/2/PDFs/MICCAIPRIME2020UniformizingTechniquestoProcessCTscanswith3DCNNsforTBPrediction.pdf
+publicationUrl:https://arxiv.org/pdf/2007.13224.pdf
+codeUrl:https://github.com/hasibzunair/uniformizing-3D
+datasetUrl:
+videoUrl:https://www.youtube.com/embed/IP6poudyny4
+videoPath:G:\search-rattailcollagen1\ScienceSearcher/data/cache/demo/2/videos/MICCAI-PRIME 2020 - Uniformizing Techniques to Process CT scans with 3D CNNs for TB Prediction.mp4
+pdfText:To learn the geometric properties of volumetric data, there are challenges imposed by the data itsel...
+_id:34
+```
+3. 根据内容定位视频
+```
+title:X-Caps: Encoding Visual Attributes in Capsules for Explainable Medical Diagnoses | MICCAI 2020
+authors:Rodney LaLonde
+abstract:
+publicationOrg:MICCAI
+year:2020
+pdfUrl:https://arxiv.org/pdf/1909.05926.pdf
+pdfPath:G:\search-rattailcollagen1\ScienceSearcher/data/cache/demo/2/PDFs/XCapsEncodingVisualAttributesinCapsulesforExplainableMedicalDiagnosesMICCAI2020.pdf
+publicationUrl:https://arxiv.org/pdf/1909.05926.pdf
+codeUrl:https://github.com/lalonderodney/X-Caps
+datasetUrl:
+videoUrl:https://www.youtube.com/embed/kJ4SLLJO0GM
+videoPath:G:\search-rattailcollagen1\ScienceSearcher/data/cache/demo/2/videos/X-Caps- Encoding Visual Attributes in Capsules for Explainable Medical Diagnoses - MICCAI 2020.mp4
+pdfText:In machine learning, predictive performance typically comes at the cost of interpretability . While ...
+_id:16
+videoStruct:[{'timeStart': '00-03-38', 'timeEnd': '00-03-42', 'sentence': 'and if we want our models to be explainable at the human level'}]
+```
+4. 根据id进行搜索
+```
+title:Let's Stop Incorrect Comparisons in End-to-end Relation Extraction! (EMNLP 2020)
+authors:mlia deeplearning
+abstract:
+publicationOrg:EMNLP
+year:2020
+pdfUrl:https://arxiv.org/pdf/2009.10684.pdf
+pdfPath:G:\search-rattailcollagen1\ScienceSearcher
+publicationUrl:https://arxiv.org/pdf/2009.10684.pdf
+codeUrl:https://github.com/btaille/sincere
+datasetUrl:
+videoUrl:https://www.youtube.com/embed/sIG8g85D03k
+videoPath:G:\search-rattailcollagen1\ScienceSearcher/data/cache/demo/1/videos/Let's Stop Incorrect Comparisons in End-to-end Relation Extraction! (EMNLP 2020).mp4
+pdfText:...
+_id:0
+```
+5. 根据关键词查询标题
+```
+ICML 2020: Learning De-biased Representations with Biased Representations
+Understanding Regularisation Methods for Continual Learning @ICML CL Workshop
+[Spotlight at NeurIPS 2020] Probabilistic Linear Solvers for Machine Learning
+[CVPR 2020 Award Nominee] Deep Geometric Functional Maps: Robust Feature Learning for Shape Correspondence
+```
 
 ## 未来的工作
 * 视频多线程并行处理
