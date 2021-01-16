@@ -1,53 +1,163 @@
-# 检索模块
+# ScienceSearcher
+[![Package](https://img.shields.io/pypi/v/ScienceSearcher)](https://pypi.org/project/ScienceSearcher)
+[![Stars](https://img.shields.io/github/stars/BITCS-Information-Retrieval-2020/search-rattailcollagen1?style=social)](https://github.com/BITCS-Information-Retrieval-2020/search-rattailcollagen1/stargazers)
+[![Forks](https://img.shields.io/github/forks/BITCS-Information-Retrieval-2020/search-rattailcollagen1?style=social)](https://github.com/BITCS-Information-Retrieval-2020/search-rattailcollagen1/network/members)
 
-从MongoDB中读取爬虫爬到的数据，建立索引，实现综合检索。
+**系统介绍** | [项目信息](https://github.com/BITCS-Information-Retrieval-2020/Course-Project/blob/main/README.md)| [关于我们](./about.md)  
 
-## 队伍名称
-**ratTailCollagen1**
+一款支持增量式数据更新的科技论文检索系统  
 
-<div style="text-align:center"><img src="./images/logo.png" height="400px" width="400px"></div>
+## 系统说明
 
-## 项目成员
+### 系统特性
+* **一行代码**即可完成服务端部署
+* **一行代码**即可完成客户端安装
+* 简易的客户端接口使用
+* PDF**多线程**并发解析
+* 检索系统增量式动态更新
+* 检索系统快速恢复
+* 可同时与**多个爬虫模块**实现交互
+* PDF和视频文件采用“**offline处理+online取用**”方案，复用数据解析结果，利于系统的快速恢复
 
-聂宇翔，王昊，兰天，程赛华，孙凡淑，公培元，孔祥宜，闻子涵
+### 系统架构
+#### 整体架构
 
-## 注意事项
-1. 所有**大文件**（包括pdf，Video等）一律组织在`/search/data`文件夹下, 并将相应文件路径添加进`.gitignore`
-2. 我们的所有代码均组织在`/search`文件夹中，之后将作为Python package打包封装。因此关于各个功能模块测试的工作均需要在`/search`这个文件夹之外进行
-3. 测试代码文件请勿上传到github中（相应文件写入到`.gitignore`即可）
-4. 约定好的接口调用方式请勿随意更改，如想要变动，请联系相应部分的负责同学沟通确认
-5. github上的代码严格进行版本控制，如果是通过命令行执行版本控制，那么请首先git clone这个项目到本地，然后自建一个分支，在自建分支上进行修改，修改结束后先转回master分支，并从github上pull下来一个最新版本的master，然后在本地将自建分支merge到master分支上，以便解决潜在的冲突，最后再将本地的master分支push到github上；此外也可以选择直接编辑github中相应的.py文件。
-6. `backup`分支请勿修改。
-7. `/search`文件夹下仅保存所有的功能模块，如果要对自己的代码进行测试，请在该文件夹以外的地方进行。
-8. 完成自己的模块之后，请自行使用`flake8`检测自己的代码风格是否符合规范。
-9. 模块分配情况表（不同组的负责同学加粗表示）：
+本系统的整体架构如下图所示：
+![系统架构](./images/architecture.png)
 
-|   模块   | 编号 |          负责人          |
-| :------: | :------: | :----------------------: |
-| DatabaseAccess |    0     |       **程赛华**       |
-| DataProcess |    1     |      **聂宇翔**       |
-| PDFProcessor |    1     | 孙凡淑 |
-| VideoProcessor |    1     |   闻子涵          |
-| ESClient |    2     |           **兰天**           |
-| SearchEngine |    3     |     **王昊**     |
-| DownloadClient |    3     | 孔祥宜  |
-| DownloadServer |    3     | 公培元 |
+#### 接口约定情况
 
-## Installation
-### Pip install
-Our Python package is [here](https://pypi.org/project/ScienceSearcher/1.0.1/).
+在接口约定方面，我们以数据流的形式为基础，通过json的格式实现了接口约定：
+
+- 组内接口约定
+  - [toES.json](./ScienceSearcher/data/dataFlow/toES.json): 该文件定义了数据在elasticsearch内索引中的存储结构
+
+- 组间接口约定
+  - [fromCrawler.json](./ScienceSearcher/data/dataFlow/fromCrawler.json): 该文件定义了从爬虫模块MongoDB server中取出来的数据结构
+  - [fromWebsite.json](./ScienceSearcher/data/dataFlow/fromWebsite.json): 该文件定义了展示模块发出请求的数据类型
+  - [toWebsite.json](./ScienceSearcher/data/dataFlow/toWebsite.json): 该文件定义了向展示模块反馈的数据类型
+
+
+#### 组间协作情况
+|   组名   |   组长   | 分工 |
+| :------: | :------: | :------: |
+| HandsomeGuys | 方致远 |    从各个论文网站上爬取多模态数据，将pdf和视频等磁盘文件按增量批次传递给检索模块，并将相关元数据同步更新给MongeDB服务   |
+| ICanOnlyCrawl | 何亮丽 |    从各个论文网站上爬取多模态数据，将pdf和视频等磁盘文件按增量批次传递给检索模块，并将相关元数据同步更新给MongeDB服务     |
+| ratTailCollagen1 | 聂宇翔 |    接收来自于爬虫模块的增量更新，并进行处理，将处理后的结果放入elasticsearch服务的相应索引中，并为展示组提供数据展示的接口     |
+| day2night | 刘雨程 |    调用检索模块的接口，展示检索的结果     |
+
+#### 代码目录结构
+
+如下所示，为我们项目的组织情况。其中`ScienceSearcher`为我们的包名。其中第一层存储了所有的功能类。在第二层中`grobid-client`中放置了访问grobid server相关的所有功能模块。`data`文件夹里放置的是`cache`和`dataFlow`文件夹，其中`dataFlow`文件夹中存放了所有的接口数据类型约定信息，而`cache`文件夹中存放了所有的硬盘文件，它们首先按（爬虫）组进行了划分，在组文件夹的内部，又按照批次进行了划分，在每一批次内部有两个文件夹`PDFs`和`videos`，分别存放pdf文件和视频文件。
 ```shell
-# Pip install the stable version of our package
-pip install ScienceSearcher -i https://pypi.python.org/simple
+.
+├── images
+└── ScienceSearcher
+    ├── data
+    │   ├── cache
+    │   │   ├── demo
+    │   │   │   ├── 1
+    │   │   │   │   ├── PDFs
+    │   │   │   │   ├── videos
+    │   │   │   │   ├── videosstruct
+    │   │   │   │   └── XMLs
+    │   │   │   └── 2
+    │   │   │       ├── PDFs
+    │   │   │       ├── videos
+    │   │   │       ├── videosstruct
+    │   │   │       └── XMLs
+    │   │   ├── fzy
+    │   │   │   ├── 1
+    │   │   │   │   ├── PDFs
+    │   │   │   │   ├── videos
+    │   │   │   │   ├── videosstruct
+    │   │   │   │   └── XMLs
+    │   │   │   └── 2
+    │   │   │       ├── PDFs
+    │   │   │       ├── videos
+    │   │   │       ├── videosstruct
+    │   │   │       └── XMLs
+    │   │   └── hll
+    │   │       └── 1
+    │   │           ├── PDFs
+    │   │           ├── videos
+    │   │           └── XMLs
+    │   └── dataFlow
+    └── grobid_client
 ```
-### Get the latest version
+
+### 部署方法
+
+#### 部署前的准备工作
+
+注：下列服务可在同一台服务器上部署，也可在不同服务器上分别部署  
+* 在一台服务器上部署MongoDB服务，并获取访问该MongoDB服务所需要的`USER`, `PASSWORD`, `ADDRESS`, `PORT`, `SERVICE_NAME`以及`COLLECTION_NAME`。
+* 在一台服务器上部署Elasticsearch服务，并获取访问该服务所需要的`ES_IP`和`ES_PORT`。
+* 在一台服务器上部署Grobid Server，并获取该服务所在的IP地址`PDF_IP`以及端口`PDF_PORT`。
+
+#### 服务端
+推荐采用Linux系统，您也可以选择Windows系统来部署。  
+首先从github上clone我们的项目，并安装依赖包
 ```shell
 # If you want to obtain the latest version of our package, please clone the repository
 git clone https://github.com/BITCS-Information-Retrieval-2020/search-rattailcollagen1.git
 cd search-rattailcollagen1
 # Make sure you have the versions of dependencies in requirements.txt
 pip install -r requirements.txt
-python setup.py install
 ```
-## Use the package in your Python
-Please see `example.py`.
+然后通过一行代码进行服务端的部署：
+```shell
+python run.py  --mode process --pdf_ip PDF_IP --pdf_port PDF_PORT --mongodb_service_path mongodb://USER:PASSWORD@ADDRESS:PORT/SERVICE_NAME --mongodb_service_name SERVICE_NAME --mongodb_collection_name COLLECTION_NAME --es_ip ES_IP --es_port ES_PORT --es_index_name ES_INDEX_NAME --cache_name GROUP_NAME
+```
+您可以选择使用`shell`文件来保存该行命令，从而省去手动输入代码的麻烦。然后将该命令中的**大写名称**替换为相应的数值。  
+名称说明如下：
+|   名称   | 说明 |
+| :------: | :------: |
+| USER |    ...     |
+| PASSWORD |    ...     |
+| ADDRESS |    ...     |
+| PORT |    ...     |
+| SERVICE_NAME |    ...     |
+| COLLECTION_NAME |    ...     |
+| ES_IP |    ...     |
+| ES_PORT |    ...     |
+| ES_INDEX_NAME |    所使用的Elasticsearch索引名称     |
+| PDF_IP |    Grobid Server所在服务器的IP地址     |
+| PDF_PORT |    Grobid Server所在服务器的端口号     |
+| GROUP_NAME |    所对应的爬虫组名称     |
+| SERVER_IP | 部署该系统的服务器的IP地址 |
+| SERVER_PORT | 部署该系统的服务器的端口号 |
+
+其中，当[部署前的准备工作](#部署前的准备工作)做好之后，用户只需要自行拟定`ES_INDEX_NAME`和`GROUP_NAME`两项即可。
+这两项指定了我们的系统所要服务的crawler是哪一个。如[代码目录结构](#代码目录结构)一节中所示，其中`/ScienceSearcher/data/cache/fzy`，`/ScienceSearcher/data/cache/fzy`和`/ScienceSearcher/data/cache/hll`为我们建立的三个示例文件夹，它们服务于三个爬虫模块。您也可以选择建立其他的为爬虫服务的文件夹。如果我们的本次的运行服务于爬虫`demo`，那么我们需要将`ES_INDEX_NAME`指定为`demo_papers`, 并将`GROUP_NAME`指定为`demo`。
+
+#### 客户端
+只需要一行代码即可以实现客户端安装。
+```shell
+pip install ScienceSearcher -i https://pypi.python.org/simple
+```
+客户端使用的一个简单例子(以`demo`爬虫系统为例，完整的使用示例参见[example.py](./example.py))为：
+```python
+from ScienceSearcher.SearchEngine import SearchEngine
+# initialization
+se = SearchEngine(download_server_ip='SERVER_IP',
+                  download_server_port=SERVER_PORT,
+                  download_client_ip='0.0.0.0',
+                  download_client_port=9001,
+                  es_ip='ES_IP',
+                  es_port=ES_PORT,
+                  index_name='demo_papers',
+                  video_index_name='demo_papers_video',
+                  group_name='demo')
+
+query = "machine"
+# 查询含有"machine"的标题
+res = se.auto_complete(query)
+```
+
+
+## 未来的工作
+* 视频多线程并行处理
+* 在服务端部署音频-文字转换模型，减少网络通信的开销
+* 当MongoDB服务出现问题时，可实现检索系统按批次回滚操作
+* PDF与视频文件利用脚本进行自动化传输（使整个系统完全自动化运行）
