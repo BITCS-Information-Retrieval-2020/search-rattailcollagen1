@@ -141,6 +141,7 @@ python run.py  --mode process --pdf_ip PDF_IP --pdf_port PDF_PORT --mongodb_serv
 | GROUP_NAME |    所对应的爬虫组名称     |
 | SERVER_IP | 部署该系统的服务器的IP地址 |
 | SERVER_PORT | 部署该系统的服务器的端口号 |
+| DOWNLOAD_PORT | 客户端接收数据的端口号 |
 
 其中，当[部署前的准备工作](#部署前的准备工作)做好之后，用户只需要自行拟定`ES_INDEX_NAME`和`GROUP_NAME`两项即可。
 这两项指定了我们的系统所要服务的crawler是哪一个。如[代码目录结构](#代码目录结构)一节中所示，其中`/ScienceSearcher/data/cache/fzy`，`/ScienceSearcher/data/cache/fzy`和`/ScienceSearcher/data/cache/hll`为我们建立的三个示例文件夹，它们服务于三个爬虫模块。您也可以选择建立其他的为爬虫服务的文件夹。如果我们的本次的运行服务于爬虫`demo`，那么我们需要将`ES_INDEX_NAME`指定为`demo_papers`, 并将`GROUP_NAME`指定为`demo`。
@@ -157,7 +158,7 @@ from ScienceSearcher.SearchEngine import SearchEngine
 se = SearchEngine(download_server_ip='SERVER_IP',
                   download_server_port=SERVER_PORT,
                   download_client_ip='0.0.0.0',
-                  download_client_port=9001,
+                  download_client_port=DOWNLOAD_PORT,
                   es_ip='ES_IP',
                   es_port=ES_PORT,
                   index_name='demo_papers',
@@ -171,15 +172,14 @@ query = {
     "query_text": "Regularisation Methods"
 }
 res = se.search(query)
-'''
-限于篇幅，本处只展示top1的部分结果，完整结果请参考模块整体效果部分
-得到的结果为字典类型，此处直接展示出了其键值对
-部分查询结果：
-title:Understanding Regularisation Methods for Continual Learning @ICML CL Workshop
-                                          .
-                                          .
-                                          .
-'''
+
+# 限于篇幅，我们将查询结果移至下文中“模块整体效果”一节的“全文检索”中
+# 得到的结果为字典类型，此处直接展示出了其键值对
+# 部分查询结果：
+# title:Understanding Regularisation Methods for Continual Learning @ICML CL Workshop
+#                                           .
+#                                           .
+#                                           .
 
 # 高级检索
 query = {
@@ -195,14 +195,15 @@ query = {
     "operator": ["", "OR", "", "", ""]
 }
 res = se.search(query)
-'''
-部分查询结果:
-title:MICCAI-PRIME 2020 - Uniformizing Techniques to Process CT scans with 3D CNNs for TB Prediction
-authors:Hasib Zunair
-                                                .
-                                                .
-                                                .
-'''
+
+# 限于篇幅，我们将查询结果移至下文中“模块整体效果”一节的“高级检索”中
+# 部分查询结果:
+# title:MICCAI-PRIME 2020 - Uniformizing Techniques to Process CT scans with 3D CNNs for TB Prediction
+# authors:Hasib Zunair
+#                                                .
+#                                                .
+#                                                .
+
 
 # 根据内容定位视频
 query = {
@@ -211,38 +212,38 @@ query = {
     "query_text": "i want"
 }
 res = se.search(query)
-'''
-部分查询结果:
-title:X-Caps: Encoding Visual Attributes in Capsules for Explainable Medical Diagnoses | MICCAI 2020
-                                                 .
-                                                 .
-                                                 .
-videoStruct:[{'timeStart': '00-03-38', 'timeEnd': '00-03-42', 'sentence': 'and if we want our models to be explainable at the human level'}]
-'''
+
+# 限于篇幅，我们将查询结果移至下文中“模块整体效果”一节的“根据内容定位视频”中
+# 部分查询结果:
+# title:X-Caps: Encoding Visual Attributes in Capsules for Explainable Medical Diagnoses | MICCAI 2020
+#                                                 .
+#                                                 .
+#                                                 .
+# videoStruct:[{'timeStart': '00-03-38', 'timeEnd': '00-03-42', 'sentence': 'and if we want our models to be explainable at the human level'}]
 
 # 根据id进行搜索
 id_ = 0
 res = se.search_by_id(id_)
-'''
-部分查询结果:
-title:Let's Stop Incorrect Comparisons in End-to-end Relation Extraction! (EMNLP 2020)
-                                        .
-                                        .
-                                        .
-_id:0
-'''
+
+# 限于篇幅，我们将查询结果移至下文中“模块整体效果”一节的“根据id进行搜索”中
+# 部分查询结果:
+# title:Let's Stop Incorrect Comparisons in End-to-end Relation Extraction! (EMNLP 2020)
+#                                         .
+#                                         .
+#                                         .
+# _id:0
 
 # 根据关键词查询标题
 query = "learn"
 res = se.auto_complete(query)
-'''
-查询结果为列表类型，此处直接展示标题
-部分查询结果:
-ICML 2020: Learning De-biased Representations with Biased Representations
-                                      .
-                                      .
-                                      .
-'''
+
+# 限于篇幅，我们将查询结果移至下文中“模块整体效果”一节的“根据关键词查询标题”中
+# 查询结果为列表类型，此处直接展示标题
+# 部分查询结果:
+# ICML 2020: Learning De-biased Representations with Biased Representations
+#                                       .
+#                                       .
+#                                       .
 ```
 
 ### 模块整体效果
