@@ -98,28 +98,30 @@ class DataProcess:
                 print('video_path: ', video_path)
                 """Convert the corresponding pdf file and video file to the specific forms"""
                 if pdfPath != "":
-                    try:
-                        pdfText = self.PDFer.convert(server=pdf_ip, port=pdf_port, pdf_path=pdf_path)
-                    except Exception as e:
-                        print('Error: ', e)
-                        itemToESClient['pdfText'] = ""
-                    else:
-                        itemToESClient['pdfText'] = pdfText
-                    if itemToESClient['pdfText'] == "":
+                    if not os.path.exists(pdf_path):
                         itemToESClient['pdfPath'] = ""
+                    else:
+                        try:
+                            pdfText = self.PDFer.convert(server=pdf_ip, port=pdf_port, pdf_path=pdf_path)
+                        except Exception as e:
+                            print('Error: ', e)
+                            itemToESClient['pdfText'] = ""
+                        else:
+                            itemToESClient['pdfText'] = pdfText
                 else:
                     itemToESClient['pdfText'] = ""
 
                 if videoPath != "":
-                    try:
-                        videoStruct = self.Videoer.convert(video_path=video_path)
-                    except Exception as e:
-                        print('Error: ', e)
-                        itemToESClient['videoStruct'] = []
-                    else:
-                        itemToESClient['videoStruct'] = videoStruct
-                    if itemToESClient['videoStruct'] == []:
+                    if not os.path.exists(video_path):
                         itemToESClient['videoPath'] = ""
+                    else:
+                        try:
+                            videoStruct = self.Videoer.convert(video_path=video_path)
+                        except Exception as e:
+                            print('Error: ', e)
+                            itemToESClient['videoStruct'] = []
+                        else:
+                            itemToESClient['videoStruct'] = videoStruct
                 else:
                     itemToESClient['videoStruct'] = []
 
