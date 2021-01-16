@@ -97,9 +97,11 @@ class DataProcess:
                 print('pdf_path: ', pdf_path)
                 print('video_path: ', video_path)
                 """Convert the corresponding pdf file and video file to the specific forms"""
+                itemToESClient['pdfText'] = ""
                 if pdfPath != "":
                     if not os.path.exists(pdf_path):
                         itemToESClient['pdfPath'] = ""
+                        itemToESClient['pdfText'] = ""
                     else:
                         try:
                             pdfText = self.PDFer.convert(server=pdf_ip, port=pdf_port, pdf_path=pdf_path)
@@ -111,9 +113,11 @@ class DataProcess:
                 else:
                     itemToESClient['pdfText'] = ""
 
+                itemToESClient['videoStruct'] = []
                 if videoPath != "":
                     if not os.path.exists(video_path):
                         itemToESClient['videoPath'] = ""
+                        itemToESClient['videoStruct'] = []
                     else:
                         try:
                             videoStruct = self.Videoer.convert(video_path=video_path)
@@ -126,11 +130,11 @@ class DataProcess:
                     itemToESClient['videoStruct'] = []
 
                 dataToESClient.append(itemToESClient)
-
+              
             """Insert dict list into the ES system"""
             # logging.warning(dataToESClient)
             status = self.ESer.update_index(data=dataToESClient, batch_size=len(dataToESClient))
-            logging.info(status)
+            print('[!] update_index: ' + str(status))
             sleep(self.sleep_time)
             """Check if the cursor is in the end of the MongoDB"""
             if len(dataToESClient) < self.batchSize:
