@@ -189,10 +189,9 @@ query = {
         "title": "",
         "authors": "Hasib Zunair",
         "abstract": "",
-        "content": "",
-        "year": ""
+        "content": ""
     },
-    "operator": ["", "OR", "", "", ""]
+    "operator": ["", "OR", "", ""]
 }
 res = se.search(query)
 
