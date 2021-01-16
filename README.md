@@ -127,14 +127,14 @@ python run.py  --mode process --pdf_ip PDF_IP --pdf_port PDF_PORT --mongodb_serv
 名称说明如下：
 |   名称   | 说明 |
 | :------: | :------: |
-| USER |    ...     |
-| PASSWORD |    ...     |
-| ADDRESS |    ...     |
-| PORT |    ...     |
-| SERVICE_NAME |    ...     |
-| COLLECTION_NAME |    ...     |
-| ES_IP |    ...     |
-| ES_PORT |    ...     |
+| USER |    连接数据库的用户名     |
+| PASSWORD |    连接数据库的密码     |
+| ADDRESS |    数据库所在服务器IP地址     |
+| PORT |    数据库所在服务器端口号     |
+| SERVICE_NAME |    数据库名称     |
+| COLLECTION_NAME |    文档集合名称     |
+| ES_IP |    Elasticsearch所在服务器的IP地址     |
+| ES_PORT |    Elasticsearch所在服务器的端口号     |
 | ES_INDEX_NAME |    所使用的Elasticsearch索引名称     |
 | PDF_IP |    Grobid Server所在服务器的IP地址     |
 | PDF_PORT |    Grobid Server所在服务器的端口号     |
