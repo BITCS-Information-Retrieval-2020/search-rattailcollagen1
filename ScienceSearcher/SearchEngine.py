@@ -55,7 +55,7 @@ class SearchEngine:
             new_query["authors"] = query["query_text"]["authors"].lower()
             new_query["abstract"] = query["query_text"]["abstract"].lower()
             new_query["pdfText"] = query["query_text"]["content"].lower()
-            new_query["year"] = query["query_text"]["year"].lower()
+            # new_query["year"] = query["query_text"]["year"].lower()
 
             complete_new_query["type"] = query["type"]
             complete_new_query["top_number"] = query["top_number"]
