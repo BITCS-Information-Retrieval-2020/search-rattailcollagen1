@@ -95,6 +95,20 @@
 * 在一台服务器上部署Elasticsearch服务，并获取访问该服务所需要的`ES_IP`和`ES_PORT`。
 * 在一台服务器上部署Grobid Server，并获取该服务所在的IP地址`PDF_IP`以及端口`PDF_PORT`。
 
+#### 依赖的第三方库
+```python
+elasticsearch==7.10.1
+baidu_aip==2.2.18.0
+pymongo==3.11.2
+ipdb==0.13.4
+Flask==1.1.2
+requests==2.14.2
+pydub==0.24.1
+SpeechRecognition==3.8.1
+wit==6.0.0
+moviepy==1.0.3
+```
+
 #### 服务端
 推荐采用Linux系统，您也可以选择Windows系统来部署。  
 首先从github上clone我们的项目，并安装依赖包
@@ -154,6 +168,8 @@ query = "machine"
 # 查询含有"machine"的标题
 res = se.auto_complete(query)
 ```
+
+### 模块整体效果
 
 
 ## 未来的工作
