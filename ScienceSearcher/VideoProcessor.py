@@ -236,6 +236,8 @@ class VideoProcessor:
             with open(json_path, 'r', encoding='utf-8') as fp:
                 json_data = json.load(fp)
                 return json_data
+        else:
+            raise Exception('[!] Json not found: ', json_path)
 
         videoToSpeech(video_path, target="tmp.wav")
         if os.path.exists('splits'):
