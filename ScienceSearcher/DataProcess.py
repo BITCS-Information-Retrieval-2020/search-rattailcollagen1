@@ -130,7 +130,7 @@ class DataProcess:
                     itemToESClient['videoStruct'] = []
 
                 dataToESClient.append(itemToESClient)
-              
+
             """Insert dict list into the ES system"""
             # logging.warning(dataToESClient)
             status = self.ESer.update_index(data=dataToESClient, batch_size=len(dataToESClient))
