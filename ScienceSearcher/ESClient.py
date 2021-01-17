@@ -129,7 +129,7 @@ class ESClient:
                 item['_id'] = item['_id']
                 item.pop('videoStruct')
                 actions.append(item)
-            handler = helpers.bulk(self.es, actions)
+            # handler = helpers.bulk(self.es, actions)
         except Exception as e:
             print(e)
             return False
