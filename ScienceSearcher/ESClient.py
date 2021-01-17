@@ -29,15 +29,15 @@ class ESClient:
                     'copy_to': 'full_field',
                 },
                 'authors': {
-                    'type': 'text',
+                    'type': 'keyword',
                     'copy_to': 'full_field',
                 },
                 'abstract': {
-                    'type': 'text',
+                    'type': 'keyword',
                     'copy_to': 'full_field',
                 },
                 'publicationOrg': {
-                    'type': 'text',
+                    'type': 'keyword',
                     'copy_to': 'full_field',
                 },
                 'year': {'type': 'integer'},
@@ -129,7 +129,7 @@ class ESClient:
                 item['_id'] = item['_id']
                 item.pop('videoStruct')
                 actions.append(item)
-            helpers.bulk(self.es, actions)
+            handler = helpers.bulk(self.es, actions)
         except Exception as e:
             print(e)
             return False
@@ -302,13 +302,13 @@ if __name__ == "__main__":
         "type": 1,
         "top_number": 10,
         "query_text": {
-            "title": "Oral NeurIPS",
-            "authors": "",
+            "title": "",
+            "authors": "Benzing",
             "abstract": "",
             "content": "",
             "year": "",
         },
-        "operator": ["AND", "", "", "", ""]
+        "operator": ["", "AND", "", "", ""]
     }
     rest = esclient.search(query2)
     # pprint.pprint(f'rest2[{len(rest)}]: {rest}')
